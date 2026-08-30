@@ -22,7 +22,8 @@
   <ItemGroup>
     <Compile Remove="Properties\Settings.Designer.cs" />
     <Resource Include="Images\**\*" />
-    <None Update="Help\TimeLinerHelp.pdf" CopyToOutputDirectory="Always" />
+    <None Remove="Help\TimeLinerHelp.pdf" />
+    <Content Include="Help\TimeLinerHelp.pdf" CopyToOutputDirectory="Always" />
     <None Include="..\..\LICENSE" Link="LICENSE" CopyToPublishDirectory="Always" />
     <None Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="Always" />
   </ItemGroup>
