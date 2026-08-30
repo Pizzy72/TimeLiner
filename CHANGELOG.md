@@ -4,16 +4,17 @@ All notable changes to TimeLiner are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [2.15.0] - Unreleased
+## [2.15.0] - 2026-08-30
 
 ### Added
 - Modern SDK-style project structure for .NET 10 and WPF
-- Automated build, test, and installer workflows through Invoke-Build
+- Automated build, test, run, and installer workflows through Invoke-Build
 
 ### Changed
 - Updated Fluent.Ribbon to version 11.0.2
 - Improved light and dark theme styling for the Ribbon, expanders, and scrollbars
 - Improved consistency and usability of the timeline and information panel controls
+- Improved color dialog
 - Replaced external MVVM and dialog infrastructure with application-owned implementations
 - Updated the project and architecture documentation
 
