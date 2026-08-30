@@ -1,8 +1,7 @@
 {
   "profiles": {
-    "TimeLiner with test data": {
-      "commandName": "Project",
-      "commandLineArgs": "-timezone local \"..\\..\\TestData\\deployment.tli\""
+    "TimeLiner": {
+      "commandName": "Project"
     }
   },
   "$schema": "https://json.schemastore.org/launchsettings.json"
