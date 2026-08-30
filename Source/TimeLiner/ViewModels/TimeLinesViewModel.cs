@@ -1,9 +1,10 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -31,7 +32,10 @@ namespace TimeLiner.ViewModels
         /// <summary>
         /// The timelines model.
         /// </summary>
-        public TimeLinesModel TimeLinesModel { get; private set; }
+        public TimeLinesModel TimeLinesModel
+        {
+            get; private set;
+        }
 
         /// <summary>
         /// Manages the undo and redo stack for the timelines model.
@@ -205,47 +209,74 @@ namespace TimeLiner.ViewModels
         /// <summary>
         /// The view model of the start-time locator.
         /// </summary>
-        public TimeLocatorViewModel StartTimeLocatorViewModel { get; }
+        public TimeLocatorViewModel StartTimeLocatorViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view model of the end-time locator.
         /// </summary>
-        public TimeLocatorViewModel EndTimeLocatorViewModel { get; }
+        public TimeLocatorViewModel EndTimeLocatorViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view model of the selected-time locator.
         /// </summary>
-        public TimeLocatorViewModel SelectedTimeLocatorViewModel { get; }
+        public TimeLocatorViewModel SelectedTimeLocatorViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view model of the timeline selector.
         /// </summary>
-        public TimeLineSelectorViewModel TimeLineSelectorViewModel { get; }
+        public TimeLineSelectorViewModel TimeLineSelectorViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view model of the zoom tool.
         /// </summary>
-        public ZoomToolViewModel ZoomToolViewModel { get; }
+        public ZoomToolViewModel ZoomToolViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view model of the info dialog.
         /// </summary>
-        public InfoDialogViewModel InfoDialogViewModel { get; }
+        public InfoDialogViewModel InfoDialogViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view model of the find dialog.
         /// </summary>
-        public FindDialogViewModel FindDialogViewModel { get; }
+        public FindDialogViewModel FindDialogViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view model of the timeline item dialog.
         /// </summary>
-        public TimeLineItemDialogViewModel TimeLineItemDialogViewModel { get; }
+        public TimeLineItemDialogViewModel TimeLineItemDialogViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view model of the timeline dialog.
         /// </summary>
-        public TimeLineDialogViewModel TimeLineDialogViewModel { get; }
+        public TimeLineDialogViewModel TimeLineDialogViewModel
+        {
+            get;
+        }
 
 
 
@@ -451,11 +482,18 @@ namespace TimeLiner.ViewModels
                 return _helpCommand ??= new MyActionCommand(
                     _ =>
                     {
-                        string binDirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                        if (binDirPath != null)
+                        // Use AppContext.BaseDirectory (works with single-file publish) and
+                        // ensure the default PDF viewer is used via UseShellExecute = true on .NET 5+/Core/.NET.
+                        string baseDir = AppContext.BaseDirectory;
+                        string helpFilePath = Path.Combine(baseDir, "Help", "TimeLinerHelp.pdf");
+                        if (File.Exists(helpFilePath))
                         {
-                            string helpFilePath = Path.Combine(binDirPath, "Help", "TimeLinerHelp.pdf");
-                            System.Diagnostics.Process.Start(helpFilePath);
+                            ProcessStartInfo psi = new()
+                            {
+                                FileName = helpFilePath,
+                                UseShellExecute = true
+                            };
+                            Process.Start(psi);
                         }
                     }
                 );
