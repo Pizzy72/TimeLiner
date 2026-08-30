@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: MIT
-// Copyright (c) 2021–2025 Christian Pistor
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2021–2026 Christian Pistor
 
 using System.Windows;
 using System.Windows.Controls;
