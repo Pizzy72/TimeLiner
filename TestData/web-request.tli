@@ -1,0 +1,9 @@
+TimeLine,Item,Start,End,Color
+Request,GET /api/orders,2026-08-29T09:00:00.0000000Z,2026-08-29T09:00:00.8500000Z,LightSteelBlue
+Gateway,Request received,2026-08-29T09:00:00.0100000Z,,CornflowerBlue
+Gateway,Authentication,2026-08-29T09:00:00.0200000Z,2026-08-29T09:00:00.0800000Z,MediumPurple
+OrderService,Load order data,2026-08-29T09:00:00.1100000Z,2026-08-29T09:00:00.6200000Z,LightGreen
+Database,SQL query,2026-08-29T09:00:00.1300000Z,2026-08-29T09:00:00.5700000Z,Khaki
+Cache,Cache miss,2026-08-29T09:00:00.1200000Z,,Orange
+Gateway,Response sent,2026-08-29T09:00:00.7000000Z,,LimeGreen
+

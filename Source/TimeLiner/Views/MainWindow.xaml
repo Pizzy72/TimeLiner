@@ -1,0 +1,537 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2021-2026 Christian Pistor
+-->
+<f:RibbonWindow
+    x:Class="TimeLiner.Views.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:TimeLiner.Converter"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:f="urn:fluent-ribbon"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:v="clr-namespace:TimeLiner.Views"
+    Title="{Binding Path=WindowTitle}"
+    Width="1200"
+    Height="600"
+    MinWidth="600"
+    MinHeight="100"
+    AllowDrop="True"
+    DataContext="{Binding Source={StaticResource Locator}, Path=MainWindow}"
+    DragOver="MainWindow_DragOver"
+    FontSize="15"
+    Icon="..\Images\Application.ico"
+    WindowStartupLocation="CenterScreen"
+    PreviewKeyDown="MainWindow_KeyDown"
+    Drop="MainWindow_Drop"
+    Closing="MainWindow_Closing"
+    Closed="MainWindow_Closed"
+    Loaded="MainWindow_Loaded"
+    mc:Ignorable="d"
+    >
+
+    <f:RibbonWindow.Resources>
+
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <c:TimeZoneInfoConverter x:Key="TimeZoneInfoConverter" />
+        <c:DarkThemeConverter x:Key="DarkThemeConverter" />
+
+        <!--  Time Zones  -->
+        <!--  https://stackoverflow.com/questions/4672867/can-i-use-a-different-template-for-the-selected-item-in-a-wpf-combobox-than-for/4672995  -->
+        <DataTemplate x:Key="SimpleTemplate">
+            <StackPanel>
+                <TextBlock Text="{Binding Path=DisplayName, Converter={StaticResource TimeZoneInfoConverter}}" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="ExtendedTemplate">
+            <StackPanel>
+                <TextBlock Text="{Binding Path=DisplayName}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <Style x:Key="ToolButtonStyle">
+            <Setter Property="Control.Width" Value="55" />
+        </Style>
+
+    </f:RibbonWindow.Resources>
+
+    <f:RibbonWindow.InputBindings>
+        <KeyBinding
+            Key="S"
+            Command="ApplicationCommands.SaveAs"
+            Modifiers="Ctrl+Alt" />
+        <KeyBinding Key="F1" Command="{Binding HelpCommand}" />
+    </f:RibbonWindow.InputBindings>
+
+    <f:RibbonWindow.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.New" Executed="NewCommand_Executed" />
+        <CommandBinding Command="ApplicationCommands.Open" Executed="OpenCommand_Executed" />
+        <CommandBinding
+            CanExecute="SaveCommand_CanExecute"
+            Command="ApplicationCommands.Save"
+            Executed="SaveCommand_Executed" 
+            />
+        <CommandBinding
+            CanExecute="SaveAsCommand_CanExecute"
+            Command="ApplicationCommands.SaveAs"
+            Executed="SaveAsCommand_Executed" 
+            />
+    </f:RibbonWindow.CommandBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" MinHeight="100" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Ribbon menu  -->
+        <f:Ribbon
+            x:Name="RibbonControl"
+            Grid.Row="0"
+            AreTabHeadersVisible="True"
+            AutomaticStateManagement="False"
+            FontSize="12"
+            IsMinimized="{Binding Path=IsRibbonMenuMinimized}"
+            PreviewKeyDown="Ribbon_KeyDown">
+            <f:RibbonTabItem Header="Home" >
+                <f:RibbonGroupBox Header="File">
+                    <f:Button
+                        Command="New"
+                        Header="New"
+                        Icon="images/new-16px.png"
+                        LargeIcon="images/new-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="New file (Ctrl+N)" 
+                        />
+                    <f:Button
+                        Command="Open"
+                        Header="Open"
+                        Icon="images/open-16px.png"
+                        LargeIcon="images/open-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Open file (Ctrl+O)" 
+                        />
+                    <f:SplitButton 
+                        Header="Save" 
+                        Command="Save"  
+                        LargeIcon="images/save-32px.png" 
+                        Icon="images/save-16px.png"   
+                        ToolTip="Save" 
+                        Width="55"
+                        >
+                        <f:Button
+                                Header="Save"
+                                Command="Save"
+                                Icon="images/save-16px.png"
+                                LargeIcon="images/save-32px.png"
+                                Style="{StaticResource ToolButtonStyle}"
+                                ToolTip="Save (Ctrl+S)"
+                                />
+                        <f:Button
+                                Command="SaveAs"
+                                Header="Save As"
+                                Icon="images/save-16px.png"
+                                LargeIcon="images/save-32px.png"
+                                Style="{StaticResource ToolButtonStyle}"
+                                ToolTip="Save As (Ctrl+Alt+S)"
+                                />
+                    </f:SplitButton>
+                </f:RibbonGroupBox>
+
+                <f:RibbonGroupBox Header="Time">
+                    <f:ComboBox
+                        Focusable="False"
+                        Header="Time Zone"
+                        f:InputControlProperties.InputWidth="120"
+                        IsEditable="False"
+                        ItemTemplateSelector="{v:ComboBoxTemplateSelector SelectedItemTemplate={StaticResource SimpleTemplate},
+                                                                          DropdownItemsTemplate={StaticResource ExtendedTemplate}}"
+                        ItemsSource="{Binding Source={StaticResource Locator}, Path=Settings.TimeZones}"
+                        SelectedValue="{Binding Source={StaticResource Locator}, Path=Settings.TimeZone}"
+                        SelectedValuePath="Id" 
+                        />
+                    <f:CheckBox
+                        Margin="5,10,5,0"
+                        Header="UTC Time"
+                        IsChecked="{Binding Mode=TwoWay, Source={StaticResource Locator}, Path=Settings.IsUniversalTime}"
+                        ToolTip="Show UTC time (T)" 
+                        />
+                </f:RibbonGroupBox>
+
+                <f:RibbonGroupBox Header="View">
+                    <f:CheckBox
+                        Header="Compact Time Grid"
+                        Margin="0,0,10,0"
+                        IsChecked="{Binding Mode=TwoWay, Source={StaticResource Locator}, Path=Settings.IsCompactTimeGrid}"
+                        ToolTip="Use compact time grid (C)" 
+                        />
+
+                    <f:CheckBox
+                        Header="Compact Timelines"
+                        Margin="0,0,10,0"
+                        IsChecked="{Binding Mode=TwoWay, Source={StaticResource Locator}, Path=Settings.IsCompactTimeLines}"
+                        ToolTip="Use compact timelines (Shift+C)" 
+                    />
+
+                    <f:CheckBox
+                        Header="Show Name"
+                        Margin="0,0,10,0"
+                        IsChecked="{Binding Mode=TwoWay, Source={StaticResource Locator}, Path=Settings.IsNameVisible}"
+                        ToolTip="Show timeline item name (N)" 
+                    />
+                    <f:CheckBox
+                        Header="Dark"
+                        Margin="0,0,10,0"
+                        IsChecked="{Binding Mode=TwoWay, Source={StaticResource Locator}, Path=Settings.SelectedTheme, Converter={StaticResource DarkThemeConverter}}"
+                        ToolTip="Activate dark mode (D)"
+                        />
+
+                </f:RibbonGroupBox>
+
+                <f:RibbonGroupBox Header="Navigate">
+                    <f:Button
+                        Command="{Binding Path=GotoFirstCommand}"
+                        Header="First"
+                        Icon="Images/GotoBegin-16px.png"
+                        LargeIcon="Images/GotoBegin-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Select first timeline item" 
+                        />
+                    <f:Button
+                        Command="{Binding Path=GotoPreviousCommand}"
+                        Header="Previous"
+                        Icon="Images/GotoPrevious-16px.png"
+                        LargeIcon="Images/GotoPrevious-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Select previous timeline item" 
+                        />
+                    <f:Button
+                        Command="{Binding Path=GotoNextCommand}"
+                        Header="Next"
+                        Icon="Images/GotoNext-16px.png"
+                        LargeIcon="Images/GotoNext-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Select next timeline item" 
+                        />
+                    <f:Button
+                        Command="{Binding Path=GotoLastCommand}"
+                        Header="Last"
+                        Icon="Images/GotoEnd-16px.png"
+                        LargeIcon="Images/GotoEnd-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Select last timeline item" 
+                        />
+                    <f:Button
+                        Command="{Binding Path=FindCommand}"
+                        Header="Find"
+                        Icon="Images/Find-16px.png"
+                        LargeIcon="Images/Find-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Find timeline item (Ctrl+F)" 
+                        />
+                </f:RibbonGroupBox>
+
+                <f:RibbonGroupBox Header="Scale">
+                    <f:Button
+                        Command="{Binding Path=ZoomInCommand}"
+                        Header="Zoom In"
+                        Icon="Images/ZoomIn-16px.png"
+                        LargeIcon="Images/ZoomIn-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Increase scale (Ctrl+Plus)" 
+                        />
+                    <f:Button
+                        Command="{Binding ZoomOutCommand}"
+                        Header="Zoom Out"
+                        Icon="Images/ZoomOut-16px.png"
+                        LargeIcon="Images/ZoomOut-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Decrease scale (Ctrl+Minus)" 
+                        />
+                </f:RibbonGroupBox>
+
+                <f:RibbonGroupBox Header="Locators">
+                    <f:Button
+                        Command="{Binding Path=ResetStartLocatorCommand}"
+                        Header="Reset Start"
+                        Icon="Images/ResetStartLocator-16px.png"
+                        LargeIcon="Images/ResetStartLocator-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Reset start-time locator" 
+                        />
+                    <f:Button
+                        Command="{Binding Path=ResetEndLocatorCommand}"
+                        Header="Reset End"
+                        Icon="Images/ResetEndLocator-16px.png"
+                        LargeIcon="Images/ResetEndLocator-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Reset end-time locator" 
+                        />
+                    <f:CheckBox
+                        Margin="5,12,5,0"
+                        Header="Lock"
+                        IsChecked="{Binding Mode=TwoWay, Source={StaticResource Locator}, Path=Settings.IsTimeLocatorLocked}"
+                        IsEnabled="{Binding Path=HasTimeLineItems}"
+                        ToolTip="Lock start-time and end-time locator (L)" 
+                        />
+
+                </f:RibbonGroupBox>
+
+                <f:RibbonGroupBox Header="Help">
+                    <f:Button
+                        Command="{Binding Path=HelpCommand}"
+                        Header="Help"
+                        Icon="Images/Help-16px.png"
+                        LargeIcon="Images/Help-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Show Help (F1)" 
+                        />
+                    <f:Button
+                        Command="{Binding Path=InfoCommand}"
+                        Header="Info"
+                        Icon="Images/Info-16px.png"
+                        LargeIcon="Images/Info-32px.png"
+                        Style="{StaticResource ToolButtonStyle}"
+                        ToolTip="Show version" 
+                        />
+                </f:RibbonGroupBox>
+
+            </f:RibbonTabItem>
+        </f:Ribbon>
+
+        <!--  The timelines  -->
+        <Grid Grid.Row="1">
+            <v:TimeLinesView
+                x:Name="TimeLinesView"
+                GridHeight="{Binding Source={StaticResource Locator}, Path=Settings.TimeLineHeight}"
+                GridWidth="{Binding Source={StaticResource Locator}, Path=Settings.TimeGridWidth}" />
+        </Grid>
+
+        <!--  Info text (expandable)  -->
+        <Expander
+            Grid.Row="2"
+            ExpandDirection="Up"
+            IsExpanded="{Binding Path=IsInfoTextExpanded, Mode=OneWay}"
+            Style="{StaticResource InfoTextExpanderStyle}">
+
+            <Grid Margin="10" VerticalAlignment="Bottom" HorizontalAlignment="Left">
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="*"/>
+                    
+                    <!-- spacer -->
+                    <ColumnDefinition Width="40"/>
+                    
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="*"/>
+
+                    <!-- spacer -->
+                    <ColumnDefinition Width="40"/>
+
+                    <ColumnDefinition Width="55"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <!-- Time scale -->
+                <!-- Example: "Scale : 5 min" -->
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="Scale"
+                    ToolTip="Change scale with mouse wheel while holding the Ctrl key" 
+                    />
+                <TextBox
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Style="{DynamicResource TextBoxStyle}"
+                    Text="{Binding Path=ScaleText, Mode=OneWay}"
+                    TextWrapping="NoWrap" 
+                    />
+
+                <!-- Duration of all timelines -->
+                <!-- Example: "Σ Total : 0s" -->
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="&#931; Total"
+                    ToolTip="The aggregated duration of all timeline items" 
+                    />
+                <TextBox
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Style="{DynamicResource TextBoxStyle}"
+                    Text="{Binding Path=DurationAllItems, Mode=OneWay}"
+                    TextWrapping="NoWrap" 
+                    />
+
+                <!-- Timeline utilization -->
+                <!-- Example: "Utilization : 0 %" -->
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="Utilization"
+                    ToolTip="The ratio of '&#931; Total' and '&#x394; Total'" 
+                    />
+                <TextBox
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Style="{DynamicResource TextBoxStyle}"
+                    Text="{Binding Path=TimeUtilization, Mode=OneWay, StringFormat=#0 %}"
+                    TextWrapping="NoWrap" 
+                    />
+
+                <!-- Time of start-time locator -->
+                <!-- Example: "ᴀ Selected : 2020-08-30 19:13:51.211 +02:00" -->
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="3"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="&#913; Selected"
+                    ToolTip="Set start-locator with left mouse button click while holding the Ctrl key" 
+                    />
+                <TextBox
+                    Grid.Row="0"
+                    Grid.Column="4"
+                    BorderThickness="0"
+                    Foreground="{DynamicResource StartTimeLocatorBrush}"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Background="Transparent"
+                    Text="{Binding Path=StartTimeLocatorViewModel.TimeText, Mode=OneWay}"
+                    TextWrapping="NoWrap" 
+                    />
+
+                <!-- 2 Time of end-time locator -->
+                <!-- Example: "Ω Selected : 2020-08-30 19:29:21.189 +02:00" -->
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="3"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="&#937; Selected"
+                    ToolTip="Set end-time with right mouse button click while holding the Ctrl key" />
+                <TextBox
+                    Grid.Row="1"
+                    Grid.Column="4"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Foreground="{DynamicResource EndTimeLocatorBrush}"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Text="{Binding Path=EndTimeLocatorViewModel.TimeText, Mode=OneWay}"
+                    TextWrapping="NoWrap" 
+                    />
+
+                <!-- 3 Span between selected start time and end time  -->
+                <!-- Example: "Δ Selected : 15 min 29 s" -->
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="3"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="&#x394; Selected"
+                    ToolTip="The span between the selected start and end time" 
+                    />
+                <TextBox
+                    Grid.Row="2"
+                    Grid.Column="4"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Foreground="{DynamicResource SelectedTimeSpanBrush}"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Text="{Binding Path=LocatorDelta, Mode=OneWay}"
+                    TextWrapping="NoWrap" 
+                    />
+
+
+                <!-- 1 Total start time -->
+                <!-- Example: "Δ Total : 15 min 29 s" -->
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="6"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="&#913; Total"
+                    ToolTip="The total start time"
+                    />
+                <TextBox
+                    Grid.Row="0"
+                    Grid.Column="7"
+                    BorderThickness="0"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Style="{DynamicResource TextBoxStyle}"
+                    Text="{Binding Path=TotalStartTimeText, Mode=OneWay}"
+                    TextWrapping="NoWrap"
+                    />
+
+
+                <!-- 2 Total end time -->
+                <!-- Example: "Ω Total : 2020-08-30 19:29:21.189 +02:00" -->
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="6"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="&#937; Total"
+                    ToolTip="The total end time" 
+                    />
+                <TextBox
+                    Grid.Row="1"
+                    Grid.Column="7"
+                    BorderThickness="0"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Style="{DynamicResource TextBoxStyle}"
+                    Text="{Binding Path=TotalEndTimeText, Mode=OneWay}"
+                    TextWrapping="NoWrap" 
+                    />
+
+
+                <!-- 3 Span between first and last timeline item  -->
+                <!-- Example: "Δ Total : 15 min 29 s" -->
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="6"
+                    Style="{DynamicResource TextBlockStyle}"
+                    Text="&#x394; Total"
+                    ToolTip="The span between the first and the last timeline item" 
+                    />
+                <TextBox
+                    Grid.Row="2"
+                    Grid.Column="7"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    IsReadOnly="True"
+                    MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Style="{DynamicResource TextBoxStyle}"
+                    Text="{Binding Path=DeltaFirstLastItem, Mode=OneWay}"
+                    TextWrapping="NoWrap" 
+                    />
+
+            </Grid>
+        </Expander>
+    </Grid>
+</f:RibbonWindow>

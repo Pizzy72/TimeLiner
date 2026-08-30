@@ -1,0 +1,8 @@
+TimeLine,Item,Start,End,Color
+Job,Nightly import,2026-08-29T02:00:00.0000000Z,2026-08-29T02:18:00.0000000Z,LightSteelBlue
+Scheduler,Job started,2026-08-29T02:00:00.0000000Z,,CornflowerBlue
+Worker A,Read source files,2026-08-29T02:00:05.0000000Z,2026-08-29T02:04:00.0000000Z,LightGreen
+Worker B,Transform records,2026-08-29T02:02:00.0000000Z,2026-08-29T02:11:00.0000000Z,MediumPurple
+Worker C,Write results,2026-08-29T02:10:00.0000000Z,2026-08-29T02:16:30.0000000Z,Khaki
+Monitor,High memory warning,2026-08-29T02:12:15.0000000Z,,OrangeRed
+Scheduler,Job completed,2026-08-29T02:18:00.0000000Z,,LimeGreen

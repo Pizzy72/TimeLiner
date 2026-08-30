@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TimeLiner</RootNamespace>
+    <AssemblyName>TimeLiner</AssemblyName>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <ApplicationIcon>Images\Application.ico</ApplicationIcon>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fluent.Ribbon" Version="11.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Properties\Settings.Designer.cs" />
+    <Resource Include="Images\**\*" />
+    <None Update="Help\TimeLinerHelp.pdf" CopyToOutputDirectory="Always" />
+    <None Include="..\..\LICENSE" Link="LICENSE" CopyToPublishDirectory="Always" />
+    <None Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+
+  <Target Name="ValidateReleaseNotices" BeforeTargets="Publish">
+    <Error Condition="!Exists('..\..\LICENSE')" Text="The TimeLiner LICENSE file is missing." />
+    <Error Condition="!Exists('..\..\THIRD-PARTY-NOTICES.txt')" Text="The TimeLiner third-party notices file is missing." />
+  </Target>
+
+</Project>

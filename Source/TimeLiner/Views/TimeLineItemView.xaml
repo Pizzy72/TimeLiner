@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2021-2026 Christian Pistor
+-->
+<UserControl
+    x:Class="TimeLiner.Views.TimeLineItemView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:TimeLiner.Converter"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:views="clr-namespace:TimeLiner.Views"
+    Width="{Binding Path=Width}"
+    d:DesignHeight="{Binding Source={x:Static vm:SettingsViewModel.Instance}, Path=TimeLineHeight}"
+    d:DesignWidth="{Binding Source={x:Static vm:SettingsViewModel.Instance}, Path=TimeGridWidth}"
+    PreviewMouseLeftButtonDown="UserControl_PreviewMouseLeftButtonDown"
+    PreviewMouseLeftButtonUp="UserControl_PreviewMouseLeftButtonUp"
+    PreviewMouseMove="UserControl_PreviewMouseMove"
+    mc:Ignorable="d"
+    >
+
+    <UserControl.ContextMenu>
+        <ContextMenu>
+            <MenuItem Command="{Binding Path=EditTimeLineItemCommand}" Header="Edit Item" />
+            <MenuItem Command="{Binding Path=DeleteTimeLineItemCommand}" Header="Delete Item" />
+        </ContextMenu>
+    </UserControl.ContextMenu>
+
+    <Canvas>
+        <Canvas.Resources>
+            <c:ColorToBrushConverter x:Key="ColorBrush" />
+            <c:ColorToContrastBrushConverter x:Key="ContrastBrush" />
+            <c:TextOutsideItemClipConverter x:Key="OutsideItemClip" />
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+            <Style x:Key="SelectedStyle" TargetType="{x:Type Rectangle}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Path=IsSelected}" Value="False">
+                        <Setter Property="Rectangle.Stroke">
+                            <Setter.Value>
+                                <SolidColorBrush Color="Transparent" />
+                            </Setter.Value>
+                        </Setter>
+                        <Setter Property="Rectangle.StrokeThickness" Value="1" />
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding Path=IsSelected}" Value="True">
+                        <Setter Property="Rectangle.Stroke">
+                            <Setter.Value>
+                                <SolidColorBrush Color="{DynamicResource SelectedTimeLineItemColor}" />
+                            </Setter.Value>
+                        </Setter>
+                        <Setter Property="Rectangle.StrokeDashArray" Value="2" />
+                        <Setter Property="Rectangle.StrokeDashOffset" Value="0" />
+                        <Setter Property="Rectangle.StrokeThickness" Value="2" />
+                        <DataTrigger.EnterActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimationUsingKeyFrames
+                                        BeginTime="00:00:00"
+                                        RepeatBehavior="Forever"
+                                        Storyboard.TargetProperty="(Shape.StrokeDashOffset)">
+                                        <SplineDoubleKeyFrame KeyTime="00:00:00.000" Value="12" />
+                                        <SplineDoubleKeyFrame KeyTime="00:00:00.800" Value="0" />
+                                    </DoubleAnimationUsingKeyFrames>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.EnterActions>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Canvas.Resources>
+
+        <!--  https://tyrrrz.me/blog/conditional-content-presenting-via-wpf-contentpresenter  -->
+        <ContentPresenter Canvas.Left="{Binding Path=Left}" Content="{Binding}">
+            <ContentPresenter.Resources>
+                <DataTemplate x:Key="TimeSpanPresenter">
+                    <Canvas Visibility="{Binding Path=IsTimeSpanVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Rectangle
+                            Width="{Binding Path=Width}"
+                            Height="{Binding Path=TimeSpanHeight}"
+                            Fill="{Binding Path=Color, Converter={StaticResource ColorBrush}}"
+                            Style="{StaticResource SelectedStyle}"
+                            ToolTipService.InitialShowDelay="0"
+                            ToolTipService.BetweenShowDelay="0"
+                            views:TimelineItemTextBehavior.IsTextObstacle="True"
+                            >
+                            <Rectangle.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Text="{Binding Path=ToolTip}" />
+                                </ToolTip>
+                            </Rectangle.ToolTip>
+                        </Rectangle>
+                        <TextBlock
+                            x:Name="TimeSpanText"
+                            Canvas.Left="4"
+                            Canvas.Top="{Binding Path=TextOffsetY}"
+                            FontSize="{Binding Path=FontSize}"
+                            Text="{Binding Path=Name}"
+                            Visibility="{Binding Path=IsNameVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            ToolTipService.InitialShowDelay="0"
+                            ToolTipService.BetweenShowDelay="0"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap"
+                            views:TimelineItemTextBehavior.EnableAutoWidth="True"
+                            views:TimelineItemTextBehavior.RightPadding="2"
+                            >
+                            <TextBlock.Clip>
+                                <MultiBinding Converter="{StaticResource OutsideItemClip}">
+                                    <Binding Path="Width" />
+                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
+                                    <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
+                                </MultiBinding>
+                            </TextBlock.Clip>
+                            <TextBlock.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Text="{Binding Path=ToolTip}" />
+                                </ToolTip>
+                            </TextBlock.ToolTip>
+                        </TextBlock>
+                        <Canvas
+                            Width="{Binding Path=Width}"
+                            Height="{Binding Path=TimeSpanHeight}"
+                            ClipToBounds="True"
+                            IsHitTestVisible="False">
+                            <TextBlock
+                                Width="{Binding ElementName=TimeSpanText, Path=ActualWidth}"
+                                Canvas.Left="4"
+                                Canvas.Top="{Binding Path=TextOffsetY}"
+                                FontSize="{Binding Path=FontSize}"
+                                Foreground="{Binding Path=Color, Converter={StaticResource ContrastBrush}}"
+                                Text="{Binding Path=Name}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="NoWrap"
+                                Visibility="{Binding Path=IsNameVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        </Canvas>
+                    </Canvas>
+                </DataTemplate>
+                <DataTemplate x:Key="TimeEventPresenter">
+                    <Canvas Visibility="{Binding Path=IsTimeEventVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Rectangle
+                            Width="{Binding Path=TimeEventWidth}"
+                            Height="{Binding Path=TimeEventHeight}"
+                            Fill="{Binding Path=Color, Converter={StaticResource ColorBrush}}"
+                            Style="{StaticResource SelectedStyle}"
+                            ToolTipService.InitialShowDelay="0"
+                            ToolTipService.BetweenShowDelay="0"
+                            views:TimelineItemTextBehavior.IsTextObstacle="True"
+                            >
+                            <Rectangle.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Text="{Binding Path=ToolTip}" />
+                                </ToolTip>
+                            </Rectangle.ToolTip>
+                            <Rectangle.LayoutTransform>
+                                <RotateTransform Angle="45" />
+                            </Rectangle.LayoutTransform>
+                            <Rectangle.RenderTransform>
+                                <TranslateTransform X="{Binding Path=TimeEventOffsetX}" />
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                        <TextBlock
+                            Canvas.Left="{Binding Path=TimeEventTextOffsetX}"
+                            Canvas.Top="{Binding Path=TextOffsetY}"
+                            FontSize="{Binding Path=FontSize}"
+                            Text="{Binding Path=Name}"
+                            Visibility="{Binding Path=IsNameVisible, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                            ToolTipService.InitialShowDelay="0"
+                            ToolTipService.BetweenShowDelay="0"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap"
+                            views:TimelineItemTextBehavior.EnableAutoWidth="True"
+                            views:TimelineItemTextBehavior.RightPadding="2"
+                            >
+                            <TextBlock.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Text="{Binding Path=ToolTip}" />
+                                </ToolTip>
+                            </TextBlock.ToolTip>
+                        </TextBlock>
+                    </Canvas>
+                </DataTemplate>
+            </ContentPresenter.Resources>
+            <ContentPresenter.Style>
+                <Style TargetType="{x:Type ContentPresenter}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Path=IsTimeSpan}" Value="True">
+                            <Setter Property="ContentTemplate" Value="{StaticResource TimeSpanPresenter}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=IsTimeSpan}" Value="False">
+                            <Setter Property="ContentTemplate" Value="{StaticResource TimeEventPresenter}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentPresenter.Style>
+        </ContentPresenter>
+    </Canvas>
+</UserControl>

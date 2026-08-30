@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2021-2026 Christian Pistor
+-->
+<UserControl
+    x:Class="TimeLiner.Views.TimeLineSelectorView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:TimeLiner.Converter"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type Grid}}}"
+    Height="{Binding Path=Settings.TimeLineHeight, Source={StaticResource Locator}}"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    d:DesignHeight="30"
+    d:DesignWidth="1000"
+    Visibility="{Binding Path=IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+    mc:Ignorable="d"
+    >
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <UserControl.Margin>
+        <MultiBinding>
+            <MultiBinding.Converter>
+                <c:MarginConverter />
+            </MultiBinding.Converter>
+            <!--  Left  -->
+            <Binding>
+                <Binding.Source>
+                    <sys:Double>0</sys:Double>
+                </Binding.Source>
+            </Binding>
+            <!--  Top  -->
+            <Binding Path="MarginTop" />
+            <!--  Right  -->
+            <Binding>
+                <Binding.Source>
+                    <sys:Double>0</sys:Double>
+                </Binding.Source>
+            </Binding>
+            <!--  Bottom  -->
+            <Binding>
+                <Binding.Source>
+                    <sys:Double>0</sys:Double>
+                </Binding.Source>
+            </Binding>
+        </MultiBinding>
+    </UserControl.Margin>
+    <Canvas>
+        <Rectangle
+            x:Name="Rectangle"
+            Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type Canvas}}}"
+            Height="{Binding Path=ActualHeight, RelativeSource={RelativeSource AncestorType={x:Type Canvas}}}"
+            Opacity="0.1" />
+    </Canvas>
+</UserControl>

@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2021-2025 Christian Pistor
+-->
+<ui:BaseRibbonWindow
+    x:Class="TimeLiner.Views.FindDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="clr-namespace:TimeLiner.UI"
+    Title="Find"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    SizeToContent="WidthAndHeight"
+    WindowStartupLocation="CenterOwner"
+    Closed="FindDialog_Closed"
+    KeyDown="FindDialog_KeyDown"
+    mc:Ignorable="d"
+    >
+    
+    <ui:BaseRibbonWindow.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </ui:BaseRibbonWindow.Resources>
+    
+    <DockPanel
+        Margin="10"
+        VerticalAlignment="Top"
+        FocusManager.FocusedElement="{Binding ElementName=FindString}"
+        >
+        <Button
+            Width="100"
+            Height="30"
+            Command="{Binding FindNextCommand}"
+            Content="Find Next" 
+            Style="{StaticResource DialogButtonStyle}"
+            />
+        <TextBox
+            x:Name="FindString"
+            Width="200"
+            Height="30"
+            Margin="10,0,0,0"
+            VerticalContentAlignment="Center"
+            MaxLength="100"
+            Style="{StaticResource TextBoxStyle}"
+            Text="{Binding Path=FindString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            />
+    </DockPanel>
+    
+</ui:BaseRibbonWindow>

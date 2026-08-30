@@ -1,0 +1,42 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    >
+
+    <!-- Metadata -->
+    <sys:Boolean x:Key="IsApplicationTheme">True</sys:Boolean>
+
+    <!-- Colors -->
+    <Color x:Key="StartTimeLocatorColor">OrangeRed</Color>
+    <Color x:Key="EndTimeLocatorColor">Cyan</Color>
+    <Color x:Key="TimeLineBackgroundColor">#FF232323</Color>
+    <Color x:Key="TimeLineGridColor">#FF444444</Color>
+    <Color x:Key="SelectedTimeSpanColor">Lime</Color>
+    <Color x:Key="CaretColor">Orange</Color>
+    <Color x:Key="SelectedTimeLineItemColor">Cyan</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="TextColorBrush" Color="White" />
+    <SolidColorBrush x:Key="StartTimeLocatorBrush" Color="{DynamicResource StartTimeLocatorColor}" />
+    <SolidColorBrush x:Key="EndTimeLocatorBrush" Color="{DynamicResource EndTimeLocatorColor}" />
+    <SolidColorBrush x:Key="TimeLineBackgroundBrush" Color="{DynamicResource TimeLineBackgroundColor}" />
+    <SolidColorBrush x:Key="TimeLineGridBrush" Color="{DynamicResource TimeLineGridColor}" />
+    <SolidColorBrush x:Key="SelectedTimeSpanBrush" Color="{DynamicResource SelectedTimeSpanColor}" />
+    <SolidColorBrush x:Key="CaretBrush" Color="{DynamicResource CaretColor}" />
+    <SolidColorBrush x:Key="ColorBorderBrush" Color="#FF707070" />
+    <SolidColorBrush x:Key="InfoExpanderHoverBrush" Color="#FF005A9E" />
+    <SolidColorBrush x:Key="InfoExpanderHoverBorderBrush" Color="#FF1868BB" />
+    <SolidColorBrush x:Key="InfoExpanderPressedBrush" Color="#FF004A82" />
+
+    <!-- Fluent scroll bars: subtle contrast against the timeline background. -->
+    <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.ScrollBar.Background" Color="#FF2B2B2B" />
+    <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.ScrollThumb.Default.Background" Color="#FF484848" />
+    <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.ScrollThumb.Default.Border" Color="#FF585858" />
+
+    <SolidColorBrush x:Key="DialogButtonBackgroundBrush" Color="#FF333333" />
+    <SolidColorBrush x:Key="DialogButtonBorderBrush" Color="#FF707070" />
+    <SolidColorBrush x:Key="DialogButtonForegroundBrush" Color="White" />
+    <SolidColorBrush x:Key="DialogButtonMouseOverBackgroundBrush" Color="#FF444444" />
+    <SolidColorBrush x:Key="DialogButtonPressedBackgroundBrush" Color="#FF555555" />
+
+</ResourceDictionary>

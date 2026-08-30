@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2021-2026 Christian Pistor
+-->
+<Canvas
+    x:Class="TimeLiner.Views.TimeLineView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:TimeLiner.Converter"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xmlns:views="clr-namespace:TimeLiner.Views"
+    Height="{Binding Source={StaticResource Locator}, Path=Settings.TimeLineHeight}"
+    d:DesignHeight="{Binding Source={StaticResource Locator}, Path=Settings.TimeLineHeight}"
+    d:DesignWidth="800"
+    AllowDrop="True"
+    Background="Transparent"
+    DataContext="{Binding}"
+    views:TimelineItemTextBehavior.IsTimelineHost="True"
+    DragEnter="Canvas_DragEnter"
+    DragOver="Canvas_DragOver"
+    Drop="Canvas_Drop"
+    GiveFeedback="Canvas_GiveFeedback"
+    PreviewMouseLeftButtonDown="Canvas_PreviewMouseLeftButtonDown"
+    PreviewMouseLeftButtonUp="Canvas_PreviewMouseLeftButtonUp"
+    PreviewMouseMove="Canvas_PreviewMouseMove"
+    ToolTipService.InitialShowDelay="1000"
+    ToolTipService.BetweenShowDelay="0"
+    mc:Ignorable="d"
+    >
+
+    <Canvas.ToolTip>
+        <ToolTip>
+            <TextBlock Text="{Binding Path=ToolTip}" />
+        </ToolTip>
+    </Canvas.ToolTip>
+
+    <Canvas.ContextMenu>
+        <ContextMenu>
+            <MenuItem 
+                Command="{Binding Path=NewTimeLineItemCommand}" 
+                Header="New Item" 
+                />
+            <MenuItem 
+                Command="{Binding Path=NewTimeLineCommand}" 
+                Header="New Timeline" 
+                />
+            <MenuItem 
+                Command="{Binding Path=RenameTimeLineCommand}" 
+                Header="Rename Timeline" 
+                />
+            <MenuItem 
+                Command="{Binding Path=DeleteTimeLineCommand}" 
+                Header="Delete Timeline" 
+                />
+        </ContextMenu>
+    </Canvas.ContextMenu>
+
+    <Canvas.Margin>
+        <MultiBinding>
+            <MultiBinding.Converter>
+                <c:MarginConverter />
+            </MultiBinding.Converter>
+            <!--  Left  -->
+            <Binding Source="{StaticResource Locator}" Path="Settings.TimeLineSpacerLeft" />
+            <!--  Top  -->
+            <Binding>
+                <Binding.Source>
+                    <sys:Double>0</sys:Double>
+                </Binding.Source>
+            </Binding>
+            <!--  Right  -->
+            <Binding Source="{StaticResource Locator}" Path="Settings.TimeLineSpacerRight" />
+            <!--  Bottom  -->
+            <Binding>
+                <Binding.Source>
+                    <sys:Double>0</sys:Double>
+                </Binding.Source>
+            </Binding>
+        </MultiBinding>
+    </Canvas.Margin>
+
+</Canvas>
+
