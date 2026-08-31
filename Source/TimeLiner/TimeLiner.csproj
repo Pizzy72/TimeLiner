@@ -8,6 +8,8 @@
     <AssemblyName>TimeLiner</AssemblyName>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
     <ApplicationIcon>Images\Application.ico</ApplicationIcon>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -26,11 +28,27 @@
     <Content Include="Help\TimeLinerHelp.pdf" CopyToOutputDirectory="Always" />
     <None Include="..\..\LICENSE" Link="LICENSE" CopyToPublishDirectory="Always" />
     <None Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="Always" />
+    <None Include="$(NetCoreRoot)LICENSE.txt"
+          Link="DOTNET-LICENSE.txt"
+          CopyToPublishDirectory="Always"
+          Condition="'$(SelfContained)' == 'true'" />
+    <None Include="$(NuGetPackageRoot)microsoft.netcore.app.runtime.$(RuntimeIdentifier)\$(RuntimeFrameworkVersion)\THIRD-PARTY-NOTICES.TXT"
+          Link="DOTNET-THIRD-PARTY-NOTICES.txt"
+          CopyToPublishDirectory="Always"
+          Condition="'$(SelfContained)' == 'true'" />
   </ItemGroup>
 
   <Target Name="ValidateReleaseNotices" BeforeTargets="Publish">
     <Error Condition="!Exists('..\..\LICENSE')" Text="The TimeLiner LICENSE file is missing." />
     <Error Condition="!Exists('..\..\THIRD-PARTY-NOTICES.txt')" Text="The TimeLiner third-party notices file is missing." />
+    <Error Condition="'$(SelfContained)' == 'true' and '$(RuntimeFrameworkVersion)' == ''"
+           Text="A self-contained publish must specify RuntimeFrameworkVersion explicitly." />
+    <Error Condition="'$(SelfContained)' == 'true' and !Exists('$(NetCoreRoot)shared\Microsoft.NETCore.App\$(RuntimeFrameworkVersion)')"
+           Text="The selected .NET runtime $(RuntimeFrameworkVersion) is not installed below $(NetCoreRoot)." />
+    <Error Condition="'$(SelfContained)' == 'true' and !Exists('$(NetCoreRoot)LICENSE.txt')"
+           Text="The Windows .NET distribution license was not found at '$(NetCoreRoot)LICENSE.txt'." />
+    <Error Condition="'$(SelfContained)' == 'true' and !Exists('$(NuGetPackageRoot)microsoft.netcore.app.runtime.$(RuntimeIdentifier)\$(RuntimeFrameworkVersion)\THIRD-PARTY-NOTICES.TXT')"
+           Text="The version-specific .NET runtime notices were not found for $(RuntimeIdentifier) $(RuntimeFrameworkVersion)." />
   </Target>
 
 </Project>
