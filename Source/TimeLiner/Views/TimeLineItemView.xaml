@@ -73,7 +73,10 @@ Copyright (c) 2021-2026 Christian Pistor
         </Canvas.Resources>
 
         <!--  https://tyrrrz.me/blog/conditional-content-presenting-via-wpf-contentpresenter  -->
-        <ContentPresenter Canvas.Left="{Binding Path=Left}" Content="{Binding}">
+        <ContentPresenter
+            Canvas.Left="{Binding Path=Left}"
+            Content="{Binding}"
+            views:TimelineItemTextBehavior.IsTextAnchor="True">
             <ContentPresenter.Resources>
                 <DataTemplate x:Key="TimeSpanPresenter">
                     <Canvas Visibility="{Binding Path=IsTimeSpanVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
