@@ -95,10 +95,15 @@ This step includes:
 - publishing a self-contained `win-x64` distribution
 - creating the Inno Setup installer
 
-The publish output includes the TimeLiner MIT license and runtime-dependency
-notices. Before any future public binary release, the exact .NET runtime license
-and third-party notice requirements must be reviewed and implemented for the
-runtime and packaging method in use.
+The publish output is a version-pinned self-contained Windows x64 distribution.
+It includes the TimeLiner MIT license, notices for the NuGet dependencies, and
+the license and third-party notices belonging to the selected .NET runtime.
+Publishing fails when one of these required files or the selected runtime is
+not available. The installer displays the .NET distribution license and installs
+all four license and notice files with the application. For correct Unicode
+display in Inno Setup, packaging automatically creates a UTF-8 BOM copy of the
+unchanged runtime license under `artifacts/installer/`; this generated copy is
+used only for the installer license page.
 
 The exact behavior is defined in `TimeLiner.build.ps1`.
 
@@ -128,7 +133,7 @@ Installation and runtime requirements are described in [Installation](installati
 - Invoke-Build commands must be executed from the repository root.
 - Installer creation requires Inno Setup to be installed locally.
 - Installer generation uses the self-contained files from `artifacts/publish/`.
-- Publishing fails if the project license or runtime-dependency notices cannot be found.
+- Publishing fails if the project or runtime license and notice files cannot be found.
 
 ---
 

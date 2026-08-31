@@ -4,6 +4,21 @@
 #define MyAppName "TimeLiner"
 #define MyAppPublisher "Christian Pistor"
 #define MyAppExeName "TimeLiner.exe"
+#if !FileExists("..\artifacts\publish\LICENSE")
+  #error "The TimeLiner LICENSE file is missing from the publish directory."
+#endif
+#if !FileExists("..\artifacts\publish\THIRD-PARTY-NOTICES.txt")
+  #error "The TimeLiner third-party notices are missing from the publish directory."
+#endif
+#if !FileExists("..\artifacts\publish\DOTNET-LICENSE.txt")
+  #error "The .NET license is missing from the publish directory."
+#endif
+#if !FileExists("..\artifacts\publish\DOTNET-THIRD-PARTY-NOTICES.txt")
+  #error "The .NET third-party notices are missing from the publish directory."
+#endif
+#if !FileExists("..\artifacts\installer\DOTNET-LICENSE.txt")
+  #error "The Unicode .NET license file for the installer is missing."
+#endif
 #define MyAppVersion GetVersionNumbersString("..\artifacts\publish\" + MyAppExeName)
 #define MyAppAssocName MyAppName + " File"
 #define MyAppAssocExt ".tli"
@@ -17,6 +32,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+LicenseFile=..\artifacts\installer\DOTNET-LICENSE.txt
 DefaultDirName={autopf}\{#MyAppName}
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
@@ -29,6 +45,13 @@ WizardStyle=modern
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Messages]
+WizardLicense=Microsoft .NET License Terms
+LicenseLabel=The license terms below apply only to the bundled Microsoft .NET components.
+LicenseLabel3=The license terms below apply only to the bundled Microsoft .NET components. You must accept them before continuing with the installation.
+LicenseAccepted=I &accept the license terms for the bundled Microsoft .NET components
+LicenseNotAccepted=I &do not accept the license terms for the bundled Microsoft .NET components
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

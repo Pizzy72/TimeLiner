@@ -1,7 +1,9 @@
 $Platform = "x64"
 $BuildMode = "Release"
 $RuntimeIdentifier = "win-x64"
+$RuntimeFrameworkVersion = "10.0.11"
 $PublishPath = "artifacts\publish"
+$InstallerLicensePath = "artifacts\installer\DOTNET-LICENSE.txt"
 $SourceZipPath = "artifacts\TimeLinerSource.zip"
 
 # Synopsis: Build TimeLiner.
@@ -35,6 +37,9 @@ task Publish Build, {
             --runtime $RuntimeIdentifier `
             --self-contained true `
             --output $PublishPath `
+            --property:DebugSymbols=false `
+            --property:DebugType=None `
+            --property:RuntimeFrameworkVersion=$RuntimeFrameworkVersion `
             --property:Platform=$Platform
     }
 }
@@ -42,6 +47,22 @@ task Publish Build, {
 # Synopsis: Build TimeLiner installer.
 task Pack Publish, {
     remove "Setup\Output\*"
+    New-Item -ItemType Directory -Force (Split-Path $InstallerLicensePath) | Out-Null
+    $RuntimeLicenseText = [System.IO.File]::ReadAllText(
+        (Join-Path $PublishPath "DOTNET-LICENSE.txt"),
+        [System.Text.UTF8Encoding]::new($false, $true))
+    $InstallerLicenseIntroduction = @"
+TimeLiner is open-source software licensed under the MIT License.
+
+This installation includes Microsoft .NET runtime components. The license terms below apply to those Microsoft components and do not replace the TimeLiner MIT License.
+
+-------------------------------------------------------------------------------
+
+"@
+    [System.IO.File]::WriteAllText(
+        $InstallerLicensePath,
+        $InstallerLicenseIntroduction + $RuntimeLicenseText,
+        [System.Text.UTF8Encoding]::new($true))
     exec { dotnet iscc "Setup\TimeLiner.iss" }
 }
 
