@@ -183,27 +183,27 @@ Copyright (c) 2021-2025 Christian Pistor
     <Style x:Key="CheckBoxStyle" TargetType="CheckBox">
 
         <Setter Property="Foreground"
-            Value="{DynamicResource Fluent.Ribbon.Brushes.ControlForegroundBrush}" />
+            Value="{DynamicResource TextColorBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
 
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
-                    <BulletDecorator>
+                    <BulletDecorator Background="Transparent" SnapsToDevicePixels="True">
                         <BulletDecorator.Bullet>
                             <Grid Width="16" Height="16">
                                 <!-- Box -->
                                 <Border
                                     x:Name="Box"
-                                    Background="{DynamicResource Fluent.Ribbon.Brushes.CheckBox.Background}"
-                                    BorderBrush="{DynamicResource Fluent.Ribbon.Brushes.CheckBox.BorderBrush}"
+                                    Background="{DynamicResource CheckBoxBackgroundBrush}"
+                                    BorderBrush="{DynamicResource CheckBoxBorderBrush}"
                                     BorderThickness="1"
                                     />
                                 <!-- Checkmark -->
                                 <Path
                                     x:Name="CheckMark"
                                     Data="M 3 8 L 7 12 L 13 4"
-                                    Stroke="White"
+                                    Stroke="{TemplateBinding Foreground}"
                                     StrokeThickness="2"
                                     Visibility="Collapsed"
                                     />
@@ -231,7 +231,7 @@ Copyright (c) 2021-2025 Christian Pistor
                             <Setter
                                 TargetName="Box"
                                 Property="BorderBrush"
-                                Value="{DynamicResource Fluent.Ribbon.Brushes.CheckBox.MouseOver.Stroke}"
+                                Value="{DynamicResource CheckBoxHighlightBorderBrush}"
                                 />
                         </Trigger>
 
@@ -240,7 +240,7 @@ Copyright (c) 2021-2025 Christian Pistor
                             <Setter
                                 TargetName="Box"
                                 Property="BorderBrush"
-                                Value="{DynamicResource Fluent.Ribbon.Brushes.CheckBox.Pressed.Stroke}"
+                                Value="{DynamicResource CheckBoxHighlightBorderBrush}"
                                 />
                         </Trigger>
 
