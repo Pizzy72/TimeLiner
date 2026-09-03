@@ -261,7 +261,7 @@ namespace TimeLiner.Views
                 // Only obstacles that start to the right of the text can limit its width.
                 // Obstacles that already overlap the text from the left are ignored here,
                 // because otherwise the calculated width could become 0.
-                .Where(x => x.Left > textLeft + 0.5)
+                .Where(x => x.Left > textLeft)
                 .Select(x => x.Left)
                 .ToList();
 
@@ -277,22 +277,25 @@ namespace TimeLiner.Views
                 .Select(x => (x.DataContext, x.Left.Value))
                 .ToList();
 
-            double? ownAnchorLeft = anchors
-                .Where(x => ReferenceEquals(x.DataContext, textDataContext))
-                .Select(x => (double?)x.Left)
-                .FirstOrDefault();
+            int ownAnchorIndex = anchors.FindIndex(
+                x => ReferenceEquals(x.DataContext, textDataContext));
 
-            if (ownAnchorLeft.HasValue)
+            if (ownAnchorIndex >= 0)
             {
                 // Compare anchors with the current item's position rather than
                 // the label's position. With tightly packed event markers the
                 // next marker can already be left of the current label start;
                 // that correctly leaves no room for the current label.
+                // Do not use a pixel tolerance for ordering: zooming out can
+                // put distinct items less than one pixel apart. For coincident
+                // anchors, the last item in visual order keeps its label.
+                double ownAnchorLeft = anchors[ownAnchorIndex].Left;
                 obstacleLefts.AddRange(
                     anchors
-                        .Where(x => !ReferenceEquals(x.DataContext, textDataContext))
-                        .Select(x => x.Left)
-                        .Where(x => x > ownAnchorLeft.Value + 0.5));
+                        .Where((x, index) => !ReferenceEquals(x.DataContext, textDataContext)
+                            && (x.Left > ownAnchorLeft
+                                || (x.Left == ownAnchorLeft && index > ownAnchorIndex)))
+                        .Select(x => x.Left));
             }
 
             if (obstacleLefts.Count == 0)
@@ -325,7 +328,7 @@ namespace TimeLiner.Views
             // Limit the TextBlock width so CharacterEllipsis can be applied.
             double newWidth = availableWidth;
 
-            if (double.IsNaN(textBlock.Width) || Math.Abs(textBlock.Width - newWidth) > 0.5)
+            if (double.IsNaN(textBlock.Width) || textBlock.Width != newWidth)
                 textBlock.Width = newWidth;
         }
 
