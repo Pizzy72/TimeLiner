@@ -47,10 +47,18 @@ Affinity Designer.
 | `Source/TimeLiner/Images/ZoomOut-16px.png` | Small zoom-out ribbon icon | Self-created by the TimeLiner author using Affinity Designer | CONFIRMED_SELF_CREATED |
 | `Source/TimeLiner/Images/ZoomOut-32px.png` | Large zoom-out ribbon icon | Self-created by the TimeLiner author using Affinity Designer | CONFIRMED_SELF_CREATED |
 
+The editable sources for these icons are retained separately from the build
+resources. The following entry represents 16 individual Affinity Designer files.
+
+| File | Use | Known origin | Status |
+|---|---|---|---|
+| `Design/Icons/Sources/*.afdesign` (16 files) | Editable sources for the application and ribbon icons | Self-created by the TimeLiner author using Affinity Designer | CONFIRMED_SELF_CREATED |
+
 ## Repository documentation images and diagrams
 
 | File | Use | Known origin | Status |
 |---|---|---|---|
+| `doc/images/TimeLinerIcon.png` | Application icon displayed in the README | Self-created by the TimeLiner author using Affinity Designer | CONFIRMED_SELF_CREATED |
 | `doc/images/TimeLinerScreenshot.png` | Main README application screenshot | Self-created TimeLiner screenshot | CONFIRMED_SELF_CREATED |
 | `doc/images/data-model.png` | Rendered data-model diagram | Self-created diagram | CONFIRMED_SELF_CREATED |
 | `doc/TimeLiner.drawio` | Editable source for the data-model diagram | Self-created diagram source | CONFIRMED_SELF_CREATED |
@@ -91,6 +99,6 @@ is not present in the current public source tree and is recorded separately belo
 
 ## Status summary
 
-- `CONFIRMED_SELF_CREATED`: 52
+- `CONFIRMED_SELF_CREATED`: 69
 - `CONFIRMED_THIRD_PARTY`: 0
 - `NEEDS_CONFIRMATION`: 0

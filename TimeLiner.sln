@@ -13,6 +13,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icon Design Sources", "Icon Design Sources", "{A7B1375E-671D-47E4-861D-1548672C6891}"
+	ProjectSection(SolutionItems) = preProject
+		Design\Icons\Sources\Find.afdesign = Design\Icons\Sources\Find.afdesign
+		Design\Icons\Sources\GotoBegin.afdesign = Design\Icons\Sources\GotoBegin.afdesign
+		Design\Icons\Sources\GotoEnd.afdesign = Design\Icons\Sources\GotoEnd.afdesign
+		Design\Icons\Sources\GotoNext.afdesign = Design\Icons\Sources\GotoNext.afdesign
+		Design\Icons\Sources\GotoPrevious.afdesign = Design\Icons\Sources\GotoPrevious.afdesign
+		Design\Icons\Sources\Help.afdesign = Design\Icons\Sources\Help.afdesign
+		Design\Icons\Sources\Info.afdesign = Design\Icons\Sources\Info.afdesign
+		Design\Icons\Sources\New.afdesign = Design\Icons\Sources\New.afdesign
+		Design\Icons\Sources\Open.afdesign = Design\Icons\Sources\Open.afdesign
+		Design\Icons\Sources\ResetBothLocators.afdesign = Design\Icons\Sources\ResetBothLocators.afdesign
+		Design\Icons\Sources\ResetEndLocator.afdesign = Design\Icons\Sources\ResetEndLocator.afdesign
+		Design\Icons\Sources\ResetStartLocator.afdesign = Design\Icons\Sources\ResetStartLocator.afdesign
+		Design\Icons\Sources\Save.afdesign = Design\Icons\Sources\Save.afdesign
+		Design\Icons\Sources\TimeLiner.afdesign = Design\Icons\Sources\TimeLiner.afdesign
+		Design\Icons\Sources\ZoomIn.afdesign = Design\Icons\Sources\ZoomIn.afdesign
+		Design\Icons\Sources\ZoomOut.afdesign = Design\Icons\Sources\ZoomOut.afdesign
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="doc/images/TimeLinerIcon.png" alt="TimeLiner icon" width="128">
+</p>
+
 # TimeLiner
 
 ![TimeLiner](doc/images/TimeLinerScreenshot.png)
