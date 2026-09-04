@@ -43,9 +43,6 @@ The following functionality is implemented with .NET and WPF platform APIs:
 - JSON settings persistence using `System.Text.Json`
 - CSV parsing and validation
 
-Earlier versions used MVVM Light, MvvmDialogs, Newtonsoft.Json, and a mocking
-framework. Those dependencies have been removed.
-
 ## Summary
 
 Runtime package usage is intentionally limited to Fluent.Ribbon and its required
