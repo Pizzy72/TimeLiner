@@ -8,9 +8,6 @@
 
 TimeLiner is a Windows tool for visualizing time events.
 
-This is a source-only open-source release. The repository does not provide
-official precompiled executables, installers, portable packages, or binary releases.
-
 I started working on TimeLiner in 2020 while analyzing software defects in my daily work.
 Many of these analyses involved events from different sources, such as log files, traces,
 or monitoring data, all related by time.
@@ -35,7 +32,7 @@ that matched these requirements, I decided to write a small tool myself.
 - Supported zoom scales range from milliseconds to weeks. Month- and year-based
   scales are not supported because their durations are not constant and depend on
   the calendar, including leap years.
-- TimeLiner may become slow when displaying very large numbers of timeline items
+- TimeLiner may become slow when displaying large numbers of timeline items
   due to WPF rendering limitations.
 - CSV field escaping is not supported.
 
