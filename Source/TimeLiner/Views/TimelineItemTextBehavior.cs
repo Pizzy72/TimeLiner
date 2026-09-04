@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -84,6 +85,55 @@ namespace TimeLiner.Views
         public static bool GetIsTextObstacle(DependencyObject element)
             => (bool)element.GetValue(IsTextObstacleProperty);
 
+
+        public static readonly DependencyProperty IsTextAnchorProperty =
+            DependencyProperty.RegisterAttached(
+                "IsTextAnchor",
+                typeof(bool),
+                typeof(TimelineItemTextBehavior),
+                new PropertyMetadata(false, OnIsTextAnchorChanged));
+
+        public static void SetIsTextAnchor(DependencyObject element, bool value)
+            => element.SetValue(IsTextAnchorProperty, value);
+
+        public static bool GetIsTextAnchor(DependencyObject element)
+            => (bool)element.GetValue(IsTextAnchorProperty);
+
+        private static readonly DependencyPropertyDescriptor CanvasLeftDescriptor =
+            DependencyPropertyDescriptor.FromProperty(
+                Canvas.LeftProperty,
+                typeof(FrameworkElement));
+
+        private static void OnIsTextAnchorChanged(
+            DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not FrameworkElement anchor)
+                return;
+
+            CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
+
+            if ((bool)e.NewValue)
+                CanvasLeftDescriptor.AddValueChanged(anchor, OnTextAnchorLeftChanged);
+        }
+
+        private static void OnTextAnchorLeftChanged(object sender, EventArgs e)
+        {
+            if (sender is not FrameworkElement anchor)
+                return;
+
+            FrameworkElement host = FindTimelineHost(anchor);
+
+            if (host == null)
+                return;
+
+            foreach (TextBlock textBlock in FindVisualChildren<TextBlock>(host)
+                .Where(GetEnableAutoWidth))
+            {
+                ScheduleUpdate(textBlock);
+            }
+        }
+
         private static void OnEnableAutoWidthChanged(
             DependencyObject d,
             DependencyPropertyChangedEventArgs e)
@@ -123,7 +173,17 @@ namespace TimeLiner.Views
         private static void OnTextBlockLoaded(object sender, RoutedEventArgs e)
         {
             if (sender is TextBlock textBlock)
+            {
+                // A CollectionView refresh can unload and reload item visuals
+                // while an item is being dragged. Unloaded detaches these
+                // handlers, so restore them when the same TextBlock returns.
+                textBlock.LayoutUpdated -= OnTextBlockLayoutUpdated;
+                textBlock.LayoutUpdated += OnTextBlockLayoutUpdated;
+                textBlock.IsVisibleChanged -= OnTextBlockIsVisibleChanged;
+                textBlock.IsVisibleChanged += OnTextBlockIsVisibleChanged;
+
                 ScheduleUpdate(textBlock);
+            }
         }
 
         private static void OnTextBlockUnloaded(object sender, RoutedEventArgs e)
@@ -175,16 +235,22 @@ namespace TimeLiner.Views
             if (host.ActualWidth <= 0)
                 return;
 
-            Rect textBounds = GetBoundsRelativeTo(textBlock, host);
+            double? textLeftValue = GetLeftRelativeTo(textBlock, host);
 
-            if (textBounds.IsEmpty)
+            if (!textLeftValue.HasValue)
                 return;
 
-            double textLeft = textBounds.Left;
+            // The origin remains available when a previous collision reduced
+            // the TextBlock width to zero. This allows the text to become
+            // visible again when the following item is moved farther right.
+            double textLeft = textLeftValue.Value;
             double rightPadding = GetRightPadding(textBlock);
             object textDataContext = textBlock.DataContext;
 
-            List<double> obstacleLefts = FindVisualChildren<FrameworkElement>(host)
+            IEnumerable<FrameworkElement> visualChildren =
+                FindVisualChildren<FrameworkElement>(host);
+
+            List<double> obstacleLefts = visualChildren
                 .Where(x => x != textBlock)
                 .Where(GetIsTextObstacle)
                 .Where(x => x.IsVisible)
@@ -195,9 +261,42 @@ namespace TimeLiner.Views
                 // Only obstacles that start to the right of the text can limit its width.
                 // Obstacles that already overlap the text from the left are ignored here,
                 // because otherwise the calculated width could become 0.
-                .Where(x => x.Left > textLeft + 0.5)
+                .Where(x => x.Left > textLeft)
                 .Select(x => x.Left)
                 .ToList();
+
+            // Canvas-based item presenters can have an ActualHeight of zero.
+            // Their origin is nevertheless valid and, unlike the rotated
+            // marker bounds, is already available during the first layout
+            // pass. Use that origin as a stable collision boundary.
+            List<(object DataContext, double Left)> anchors = visualChildren
+                .Where(GetIsTextAnchor)
+                .Where(x => x.IsVisible)
+                .Select(x => (x.DataContext, Left: GetLeftRelativeTo(x, host)))
+                .Where(x => x.Left.HasValue)
+                .Select(x => (x.DataContext, x.Left.Value))
+                .ToList();
+
+            int ownAnchorIndex = anchors.FindIndex(
+                x => ReferenceEquals(x.DataContext, textDataContext));
+
+            if (ownAnchorIndex >= 0)
+            {
+                // Compare anchors with the current item's position rather than
+                // the label's position. With tightly packed event markers the
+                // next marker can already be left of the current label start;
+                // that correctly leaves no room for the current label.
+                // Do not use a pixel tolerance for ordering: zooming out can
+                // put distinct items less than one pixel apart. For coincident
+                // anchors, the last item in visual order keeps its label.
+                double ownAnchorLeft = anchors[ownAnchorIndex].Left;
+                obstacleLefts.AddRange(
+                    anchors
+                        .Where((x, index) => !ReferenceEquals(x.DataContext, textDataContext)
+                            && (x.Left > ownAnchorLeft
+                                || (x.Left == ownAnchorLeft && index > ownAnchorIndex)))
+                        .Select(x => x.Left));
+            }
 
             if (obstacleLefts.Count == 0)
             {
@@ -229,7 +328,7 @@ namespace TimeLiner.Views
             // Limit the TextBlock width so CharacterEllipsis can be applied.
             double newWidth = availableWidth;
 
-            if (double.IsNaN(textBlock.Width) || Math.Abs(textBlock.Width - newWidth) > 0.5)
+            if (double.IsNaN(textBlock.Width) || textBlock.Width != newWidth)
                 textBlock.Width = newWidth;
         }
 
@@ -308,6 +407,20 @@ namespace TimeLiner.Views
             catch (InvalidOperationException)
             {
                 return Rect.Empty;
+            }
+        }
+
+        private static double? GetLeftRelativeTo(
+            FrameworkElement element,
+            FrameworkElement ancestor)
+        {
+            try
+            {
+                return element.TransformToAncestor(ancestor).Transform(new Point()).X;
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
             }
         }
 

@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using System.Reflection;
@@ -18,7 +18,7 @@ using System.Windows;
 [assembly: ComVisible(false)]
 [assembly: SupportedOSPlatform("windows10.0.22000")]
 [assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
-[assembly: AssemblyVersion("2.15.0.0")]
-[assembly: AssemblyFileVersion("2.15.0.0")]
+[assembly: AssemblyVersion("2.15.1.0")]
+[assembly: AssemblyFileVersion("2.15.1.0")]
 
 [assembly: InternalsVisibleTo("TimeLinerTest")]

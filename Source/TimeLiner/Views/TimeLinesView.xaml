@@ -165,7 +165,7 @@ Copyright (c) 2021-2026 Christian Pistor
                                             </RectangleGeometry>
                                         </GeometryDrawing.Geometry>
                                         <GeometryDrawing.Pen>
-                                            <Pen Brush="{DynamicResource TimeLineGridBrush}" Thickness="1" />
+                                            <Pen Brush="{DynamicResource TimeLineGridBrush}" Thickness="0.5" />
                                         </GeometryDrawing.Pen>
                                     </GeometryDrawing>
                                 </DrawingBrush.Drawing>

@@ -33,6 +33,10 @@
     <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.ScrollThumb.Default.Background" Color="#FFD2D2D2" />
     <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.ScrollThumb.Default.Border" Color="#FFB8B8B8" />
 
+    <SolidColorBrush x:Key="CheckBoxBackgroundBrush" Color="White" />
+    <SolidColorBrush x:Key="CheckBoxBorderBrush" Color="#FF707070" />
+    <SolidColorBrush x:Key="CheckBoxHighlightBorderBrush" Color="#FF005A9E" />
+
     <SolidColorBrush x:Key="DialogButtonBackgroundBrush" Color="#FFF0F0F0" />
     <SolidColorBrush x:Key="DialogButtonBorderBrush" Color="#FF707070" />
     <SolidColorBrush x:Key="DialogButtonForegroundBrush" Color="Black" />

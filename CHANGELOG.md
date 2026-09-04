@@ -4,6 +4,14 @@ All notable changes to TimeLiner are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.15.1] - 2026-09-03
+
+### Changed
+- Reduced timeline grid line thickness for a finer appearance
+
+### Fixed
+- Fixed timeline item label collisions at extreme zoom-out levels and coincident item positions
+
 ## [2.15.0] - 2026-08-30
 
 ### Added
