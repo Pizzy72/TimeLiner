@@ -19,6 +19,26 @@ I looked for an existing tool that would let me draw timelines freely, place eve
 accurately in time, and measure distances between them. Since I could not find anything
 that matched these requirements, I decided to write a small tool myself.
 
+## Features
+
+- Visualize time events and time spans on multiple parallel timelines
+- Correlate events from logs, traces, monitoring data, and other sources on a shared time axis
+- Zoom from millisecond-level detail to week-level overviews
+- Find and navigate to timeline items by name
+- Measure exact time points and durations using movable start and end locators
+- Calculate total duration, summed item duration, and timeline utilization
+- Display times in UTC or a selected Windows time zone
+- Use a simple CSV-based file format suitable for manual editing and automated generation
+
+## Known limitations
+
+- Supported zoom scales range from milliseconds to weeks. Month- and year-based
+  scales are not supported because their durations are not constant and depend on
+  the calendar, including leap years.
+- TimeLiner may become slow when displaying very large numbers of timeline items
+  due to WPF rendering limitations.
+- CSV field escaping is not supported.
+
 ---
 
 ## Developer Quick Start
@@ -67,6 +87,17 @@ Start with [TimeLiner – Overview](doc/overview.md)
 
 ---
 
+## Contributing
+
+TimeLiner is a personal hobby project maintained in my spare time.
+
+I am not accepting pull requests and cannot guarantee support, bug fixes, or new
+features. Bug reports and suggestions may be submitted through GitHub Issues.
+
+You are welcome to fork the project for your own development.
+
+---
+
 ## License
 
 SPDX-License-Identifier: MIT
@@ -76,3 +107,9 @@ Copyright (c) 2020–2026 Christian Pistor
 TimeLiner is licensed under the [MIT License](LICENSE). Runtime dependencies are
 restored from NuGet; their notices are recorded in
 [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
+
+## Acknowledgements
+
+Parts of the TimeLiner codebase, tests, and documentation were developed with
+assistance from OpenAI Codex. All resulting changes were reviewed and integrated
+by the project maintainer.
