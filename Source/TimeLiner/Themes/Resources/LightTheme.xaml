@@ -24,6 +24,7 @@
     <SolidColorBrush x:Key="TimeLineGridBackgroundBrush" Color="{DynamicResource TimeLineGridBackgroundColor}" />
     <SolidColorBrush x:Key="TimeLineGridBrush" Color="{DynamicResource TimeLineGridColor}" />
     <SolidColorBrush x:Key="SelectedTimeSpanBrush" Color="{DynamicResource SelectedTimeSpanColor}" />
+    <SolidColorBrush x:Key="ZoomToolBrush" Color="#FF0000FF" />
     <SolidColorBrush x:Key="CaretBrush" Color="{DynamicResource CaretColor}" />
     <SolidColorBrush x:Key="ColorBorderBrush" Color="#FF707070" />
     <SolidColorBrush x:Key="InfoExpanderHoverBrush" Color="#FF3B9BE5" />
