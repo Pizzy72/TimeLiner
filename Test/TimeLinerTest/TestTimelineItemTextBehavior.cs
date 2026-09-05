@@ -15,15 +15,61 @@ namespace TimeLinerTest
     public class TestTimelineItemTextBehavior
     {
         [STATestMethod]
+        public void ScrollBatch_CoalescesLabelUpdates_AndPreservesSpacing()
+        {
+            Canvas host = new() { Width = 800, Height = 40 };
+            TimelineItemTextBehavior.SetIsTimelineHost(host, true);
+            (Canvas Anchor, TextBlock Text)[] items = new (Canvas Anchor, TextBlock Text)[40];
+            for (int i = 0; i < items.Length; i++)
+                items[i] = AddItem(host, 60 + i * 18, 4);
+
+            Window window = new()
+            {
+                Content = host, Width = 820, Height = 80,
+                ShowActivated = false, ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None, Left = -10000, Top = -10000
+            };
+            int scheduledUpdates = 0;
+            void OnOperationPosted(object sender, DispatcherHookEventArgs e)
+            {
+                if (e.Operation.Priority == DispatcherPriority.Loaded)
+                    scheduledUpdates++;
+            }
+
+            try
+            {
+                window.Show();
+                FlushLayout(window);
+                window.Dispatcher.Hooks.OperationPosted += OnOperationPosted;
+                for (int step = 1; step <= 3; step++)
+                    for (int i = 0; i < items.Length; i++)
+                        Canvas.SetLeft(items[i].Anchor, 60 + i * 18 - step * 5);
+                FlushLayout(window);
+
+                Console.WriteLine($"Loaded-priority operations for 120 anchor moves: {scheduledUpdates}");
+                Assert.IsLessThanOrEqualTo(8, scheduledUpdates,
+                    "A scroll batch should schedule row updates, not one update per anchor and label.");
+                for (int i = 0; i < items.Length - 1; i++)
+                    Assert.AreEqual(12d, items[i].Text.Width);
+                Assert.IsTrue(double.IsNaN(items[^1].Text.Width));
+            }
+            finally
+            {
+                window.Dispatcher.Hooks.OperationPosted -= OnOperationPosted;
+                window.Close();
+            }
+        }
+
+        [STATestMethod]
         [DataRow(0.25)]
         [DataRow(0.0)]
         public void ZoomOut_HidesCollidingLabels_AndZoomInRestoresThem(double spacing)
         {
             Canvas host = new() { Width = 800, Height = 40 };
             TimelineItemTextBehavior.SetIsTimelineHost(host, true);
-            var first = AddItem(host, 60, 4);
-            var second = AddItem(host, 160, 18);
-            var last = AddItem(host, 260, 18);
+            (Canvas Anchor, TextBlock Text) first = AddItem(host, 60, 4);
+            (Canvas Anchor, TextBlock Text) second = AddItem(host, 160, 18);
+            (Canvas Anchor, TextBlock Text) last = AddItem(host, 260, 18);
             Window window = new()
             {
                 Content = host,

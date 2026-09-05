@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 SPDX-License-Identifier: MIT
 Copyright (c) 2021-2026 Christian Pistor
@@ -38,22 +38,26 @@ Copyright (c) 2021-2026 Christian Pistor
     </Canvas.ToolTip>
 
     <Canvas.ContextMenu>
-        <ContextMenu>
+        <ContextMenu Style="{StaticResource TimeLinerContextMenuStyle}">
             <MenuItem 
                 Command="{Binding Path=NewTimeLineItemCommand}" 
                 Header="New Item" 
+                Style="{StaticResource TimeLinerMenuItemStyle}"
                 />
             <MenuItem 
                 Command="{Binding Path=NewTimeLineCommand}" 
                 Header="New Timeline" 
+                Style="{StaticResource TimeLinerMenuItemStyle}"
                 />
             <MenuItem 
                 Command="{Binding Path=RenameTimeLineCommand}" 
                 Header="Rename Timeline" 
+                Style="{StaticResource TimeLinerMenuItemStyle}"
                 />
             <MenuItem 
                 Command="{Binding Path=DeleteTimeLineCommand}" 
                 Header="Delete Timeline" 
+                Style="{StaticResource TimeLinerMenuItemStyle}"
                 />
         </ContextMenu>
     </Canvas.ContextMenu>

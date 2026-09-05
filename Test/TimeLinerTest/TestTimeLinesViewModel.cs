@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -874,6 +874,77 @@ namespace TimeLinerTest
             Assert.AreEqual("1", timelineItem.TimeLineViewModel.Name);
             Assert.IsFalse(_timeLinesViewModel.IsModified);
         }
+        [TestMethod]
+        public async Task HorizontalScroll_UpdatesOnlyVisibleRows_AndRefreshesRowsOnEntry()
+        {
+            _timeLinesViewModel.TimeLinesVisibleHeight = 30;
+            await _timeLinesViewModel.LoadAsync(@"TestData\Minutes.csv", 1000);
+            _timeLinesViewModel.Scale = ScaleIndex.Second;
+            TimeLineItemViewModel first = _timeLinesViewModel.TimeLines[0].TimeLineItems[0];
+            TimeLineItemViewModel hidden = _timeLinesViewModel.TimeLines[1].TimeLineItems[0];
+            List<string> firstChanges = [];
+            List<string> hiddenChanges = [];
+            first.PropertyChanged += (_, e) => firstChanges.Add(e.PropertyName);
+            hidden.PropertyChanged += (_, e) => hiddenChanges.Add(e.PropertyName);
+            double originalLeft = hidden.Left;
+
+            _timeLinesViewModel.HorizontalScrollOffset = 50;
+
+            CollectionAssert.AreEquivalent(new[] { "Left", "Width", "IsTimeSpanVisible", "IsTimeEventVisible" }, firstChanges);
+            Assert.AreEqual(0, hiddenChanges.Count);
+            Assert.AreEqual(originalLeft - 50, hidden.Left);
+
+            _timeLinesViewModel.VerticalScrollOffset = 30;
+            CollectionAssert.AreEquivalent(new[] { "Left", "Width", "IsTimeSpanVisible", "IsTimeEventVisible" }, hiddenChanges);
+            hiddenChanges.Clear();
+            firstChanges.Clear();
+            _timeLinesViewModel.HorizontalScrollOffset = 75;
+            Assert.AreEqual(0, firstChanges.Count);
+            Assert.AreEqual(4, hiddenChanges.Count);
+            _timeLinesViewModel.VerticalScrollOffset = 0;
+            Assert.AreEqual(4, firstChanges.Count);
+        }
+
+        [TestMethod]
+        public async Task DeferredScroll_RefreshesAfterResizeZoomAndReorder()
+        {
+            _timeLinesViewModel.TimeLinesVisibleHeight = 30;
+            await _timeLinesViewModel.LoadAsync(@"TestData\Minutes.csv", 1000);
+            _timeLinesViewModel.Scale = ScaleIndex.Second;
+            TimeLineViewModel row = _timeLinesViewModel.TimeLines[4];
+            TimeLineItemViewModel item = row.TimeLineItems[0];
+            List<string> changes = [];
+            item.PropertyChanged += (_, e) => changes.Add(e.PropertyName);
+            _timeLinesViewModel.HorizontalScrollOffset = 50;
+            Assert.AreEqual(0, changes.Count);
+
+            _timeLinesViewModel.Scale = ScaleIndex.HalfMinute;
+            changes.Clear();
+            item.Name = "Edited while off screen";
+            changes.Clear();
+            _timeLinesViewModel.TimeLinesVisibleWidth = 800;
+            _timeLinesViewModel.TimeLinesVisibleHeight = 150;
+            Assert.IsTrue(changes.Contains("Width"));
+            Assert.AreEqual("Edited while off screen", item.Name);
+
+            _timeLinesViewModel.TimeLinesVisibleHeight = 30;
+            _timeLinesViewModel.HorizontalScrollOffset = 100;
+            changes.Clear();
+            await _timeLinesViewModel.MoveTimeLine(row, _timeLinesViewModel.TimeLines[0]);
+            Assert.AreEqual(0, row.RowIndex);
+            Assert.IsTrue(row.IsInVerticalViewport);
+            Assert.IsTrue(changes.Contains("Left"));
+            CollectionAssert.AreEqual(Enumerable.Range(0, 5).ToArray(),
+                _timeLinesViewModel.TimeLines.Select(x => x.RowIndex).ToArray());
+
+            await _timeLinesViewModel.DeleteTimeLine(row);
+            CollectionAssert.AreEqual(Enumerable.Range(0, 4).ToArray(),
+                _timeLinesViewModel.TimeLines.Select(x => x.RowIndex).ToArray());
+            await _timeLinesViewModel.UndoAsync();
+            CollectionAssert.AreEqual(Enumerable.Range(0, 5).ToArray(),
+                _timeLinesViewModel.TimeLines.Select(x => x.RowIndex).ToArray());
+        }
+
         private static SettingsRepositoryStub CreateSettingsRepository()
         {
             return new SettingsRepositoryStub(new SettingsModel());

@@ -1798,6 +1798,7 @@ namespace TimeLiner.ViewModels
             int newIndex = _timeLines.IndexOf(timeLineTo);
 
             _timeLines.Move(oldIndex, newIndex);
+            UpdateRowIndexes();
 
             TimeLinesModel.MoveTimeLine(oldIndex, newIndex);
 
@@ -1811,6 +1812,7 @@ namespace TimeLiner.ViewModels
         /// </summary>
         private void AddTimeLine(TimeLineViewModel timeLine)
         {
+            timeLine.RowIndex = _timeLines.Count;
             _timeLines.Add(timeLine);
         }
 
@@ -1820,6 +1822,7 @@ namespace TimeLiner.ViewModels
         private void InsertTimeLine(int index, TimeLineViewModel timeLine)
         {
             _timeLines.Insert(index, timeLine);
+            UpdateRowIndexes();
         }
 
         /// <summary>
@@ -1828,6 +1831,14 @@ namespace TimeLiner.ViewModels
         private void RemoveTimeLine(TimeLineViewModel timeLine)
         {
             _timeLines.Remove(timeLine);
+            timeLine.RowIndex = -1;
+            UpdateRowIndexes();
+        }
+
+        private void UpdateRowIndexes()
+        {
+            for (int i = 0; i < _timeLines.Count; i++)
+                _timeLines[i].RowIndex = i;
         }
 
         /// <summary>

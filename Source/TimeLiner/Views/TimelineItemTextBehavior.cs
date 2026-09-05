@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using System;
@@ -104,6 +104,11 @@ namespace TimeLiner.Views
                 Canvas.LeftProperty,
                 typeof(FrameworkElement));
 
+        private static readonly DependencyProperty UpdatePendingProperty =
+            DependencyProperty.RegisterAttached(
+                "UpdatePending", typeof(bool), typeof(TimelineItemTextBehavior),
+                new PropertyMetadata(false));
+
         private static void OnIsTextAnchorChanged(
             DependencyObject d,
             DependencyPropertyChangedEventArgs e)
@@ -127,11 +132,7 @@ namespace TimeLiner.Views
             if (host == null)
                 return;
 
-            foreach (TextBlock textBlock in FindVisualChildren<TextBlock>(host)
-                .Where(GetEnableAutoWidth))
-            {
-                ScheduleUpdate(textBlock);
-            }
+            ScheduleHostUpdate(host);
         }
 
         private static void OnEnableAutoWidthChanged(
@@ -198,7 +199,7 @@ namespace TimeLiner.Views
         private static void OnTextBlockLayoutUpdated(object sender, EventArgs e)
         {
             if (sender is TextBlock textBlock)
-                UpdateWidth(textBlock);
+                ScheduleUpdate(textBlock);
         }
 
         private static void OnTextBlockIsVisibleChanged(
@@ -214,25 +215,52 @@ namespace TimeLiner.Views
             if (!textBlock.IsLoaded)
                 return;
 
-            textBlock.Dispatcher.BeginInvoke(
-                DispatcherPriority.Loaded,
-                new Action(() => UpdateWidth(textBlock)));
+            FrameworkElement host = FindTimelineHost(textBlock);
+            if (host != null)
+                ScheduleHostUpdate(host);
         }
 
-        private static void UpdateWidth(TextBlock textBlock)
+        private static void ScheduleHostUpdate(FrameworkElement host)
+        {
+            if (!host.IsLoaded || (bool)host.GetValue(UpdatePendingProperty))
+                return;
+
+            // All moving anchors and labels share one update after layout.
+            host.SetValue(UpdatePendingProperty, true);
+            host.Dispatcher.BeginInvoke(
+                DispatcherPriority.Loaded,
+                new Action(() =>
+                {
+                    host.SetValue(UpdatePendingProperty, false);
+                    if (!host.IsLoaded || host.ActualWidth <= 0)
+                        return;
+
+                    // Capture geometry once for the entire row, before changing widths.
+                    List<FrameworkElement> children = FindVisualChildren<FrameworkElement>(host).ToList();
+                    List<(object DataContext, double Left)> obstacles = children
+                        .Where(x => GetIsTextObstacle(x) && x.IsVisible)
+                        .Select(x => (x.DataContext, Bounds: GetBoundsRelativeTo(x, host)))
+                        .Where(x => !x.Bounds.IsEmpty)
+                        .Select(x => (x.DataContext, x.Bounds.Left)).ToList();
+                    List<(object DataContext, double Value)> anchors = children
+                        .Where(x => GetIsTextAnchor(x) && x.IsVisible)
+                        .Select(x => (x.DataContext, Left: GetLeftRelativeTo(x, host)))
+                        .Where(x => x.Left.HasValue)
+                        .Select(x => (x.DataContext, x.Left.Value)).ToList();
+
+                    foreach (TextBlock textBlock in children.OfType<TextBlock>())
+                        UpdateWidth(textBlock, host, obstacles, anchors);
+                }));
+        }
+
+        private static void UpdateWidth(TextBlock textBlock, FrameworkElement host,
+            List<(object DataContext, double Left)> obstacles,
+            List<(object DataContext, double Left)> anchors)
         {
             if (!GetEnableAutoWidth(textBlock))
                 return;
 
             if (!textBlock.IsLoaded || !textBlock.IsVisible)
-                return;
-
-            FrameworkElement host = FindTimelineHost(textBlock);
-
-            if (host == null)
-                return;
-
-            if (host.ActualWidth <= 0)
                 return;
 
             double? textLeftValue = GetLeftRelativeTo(textBlock, host);
@@ -247,16 +275,8 @@ namespace TimeLiner.Views
             double rightPadding = GetRightPadding(textBlock);
             object textDataContext = textBlock.DataContext;
 
-            IEnumerable<FrameworkElement> visualChildren =
-                FindVisualChildren<FrameworkElement>(host);
-
-            List<double> obstacleLefts = visualChildren
-                .Where(x => x != textBlock)
-                .Where(GetIsTextObstacle)
-                .Where(x => x.IsVisible)
+            List<double> obstacleLefts = obstacles
                 .Where(x => !ReferenceEquals(x.DataContext, textDataContext))
-                .Select(x => GetBoundsRelativeTo(x, host))
-                .Where(x => !x.IsEmpty)
 
                 // Only obstacles that start to the right of the text can limit its width.
                 // Obstacles that already overlap the text from the left are ignored here,
@@ -269,14 +289,6 @@ namespace TimeLiner.Views
             // Their origin is nevertheless valid and, unlike the rotated
             // marker bounds, is already available during the first layout
             // pass. Use that origin as a stable collision boundary.
-            List<(object DataContext, double Left)> anchors = visualChildren
-                .Where(GetIsTextAnchor)
-                .Where(x => x.IsVisible)
-                .Select(x => (x.DataContext, Left: GetLeftRelativeTo(x, host)))
-                .Where(x => x.Left.HasValue)
-                .Select(x => (x.DataContext, x.Left.Value))
-                .ToList();
-
             int ownAnchorIndex = anchors.FindIndex(
                 x => ReferenceEquals(x.DataContext, textDataContext));
 

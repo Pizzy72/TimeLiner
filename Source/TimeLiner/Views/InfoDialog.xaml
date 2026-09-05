@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 SPDX-License-Identifier: MIT
 Copyright (c) 2021-2025 Christian Pistor
@@ -11,6 +11,7 @@ Copyright (c) 2021-2025 Christian Pistor
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="clr-namespace:TimeLiner.UI"    
     xmlns:f="urn:fluent-ribbon"
+    Background="{DynamicResource WindowBackgroundBrush}"
     Title="Info"
     Width="450"
     ResizeMode="NoResize"

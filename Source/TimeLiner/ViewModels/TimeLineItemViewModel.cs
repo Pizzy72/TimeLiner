@@ -481,12 +481,18 @@ namespace TimeLiner.ViewModels
                     break;
 
                 case nameof(TimeLinesViewModel.HorizontalScrollOffset):
-                    NotifyPropertyChanged(nameof(Left));
-                    NotifyPropertyChanged(nameof(Width));
-                    NotifyPropertyChanged(nameof(IsTimeSpanVisible));
-                    NotifyPropertyChanged(nameof(IsTimeEventVisible));
+                    if (TimeLineViewModel.IsInVerticalViewport)
+                        RefreshViewportGeometry();
                     break;
             }
+        }
+
+        internal void RefreshViewportGeometry()
+        {
+            NotifyPropertyChanged(nameof(Left));
+            NotifyPropertyChanged(nameof(Width));
+            NotifyPropertyChanged(nameof(IsTimeSpanVisible));
+            NotifyPropertyChanged(nameof(IsTimeEventVisible));
         }
 
         /// <summary>
