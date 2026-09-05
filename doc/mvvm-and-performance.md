@@ -102,11 +102,26 @@ queued 4,800 Loaded-priority operations in this scenario. This measures queued
 UI work, not application frame rate or end-to-end scrolling latency.
 
 Further candidates for profiling are the collection-view filters refreshed on
-scroll, per-item property notifications (including off-screen items), and
-`TimeScaleView.DrawScale`, which recreates tick controls for each scroll offset.
+scroll and per-item property notifications (including off-screen items).
 Label collision comparisons still scale quadratically with the number of items
 in a row; batching removes redundant scheduling and visual-tree traversal, but
 does not introduce a spatial index.
+
+### Reusing time-scale labels
+
+`TimeScaleView` retains its tick controls while scrolling. Motion within one grid
+interval changes only a render translation, without changing label text or
+invalidating the scale's layout. Crossing a grid boundary updates the existing
+labels. Zoom and viewport changes adjust their width and count, keeping the
+controls that are still needed.
+
+Previously, every scroll offset cleared the tick panel, created all labels again,
+and changed the control's layout margin. The regression tests in
+`TestTimeScaleView` verify control reuse across fractional scrolling, grid
+boundaries, large jumps and backward scrolling; unchanged layout within a grid
+interval; and correct labels and alignment after zoom and viewport changes.
+These checks establish reduced allocation and layout work, not an application
+frame-rate measurement.
 
 ### Large data sets
 

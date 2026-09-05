@@ -4,6 +4,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace TimeLiner.Views
 {
@@ -70,6 +71,9 @@ namespace TimeLiner.Views
         /// </summary>
         private readonly StackPanel _stackPanel;
 
+        private readonly TranslateTransform _scrollTransform = new();
+        private long? _firstTick;
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -79,10 +83,12 @@ namespace TimeLiner.Views
 
             _stackPanel = new StackPanel
             {
-                Orientation = Orientation.Horizontal
+                Orientation = Orientation.Horizontal,
+                RenderTransform = _scrollTransform
             };
 
             TimeScale.Children.Add(_stackPanel);
+            DrawScale(true);
         }
 
         /// <summary>
@@ -144,57 +150,48 @@ namespace TimeLiner.Views
         /// </summary>
         private static void DependencyProperty_Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (e.OldValue != e.NewValue)
-            {
-                ((TimeScaleView)d).DrawScale();
-            }
+            ((TimeScaleView)d).DrawScale(
+                e.Property != _scrollOffsetProperty && e.Property != _leftMarginProperty);
         }
 
         /// <summary>
         /// Draw the time scale for the visible time span.
         /// </summary>
-        private void DrawScale()
+        private void DrawScale(bool refreshTickContent)
         {
-            _stackPanel.Children.Clear();
+            // Bindings can change while InitializeComponent is still running.
+            if (_stackPanel == null)
+                return;
 
-            SetLeftMargin();
+            if (!double.IsFinite(GridWidth) || GridWidth <= 0
+                || !double.IsFinite(VisibleWidth) || VisibleWidth < 0
+                || !double.IsFinite(ScrollOffset))
+                return;
+
+            // A render translation keeps fractional scrolling out of layout.
+            _scrollTransform.X = -(ScrollOffset % GridWidth) - ScaleTextOffset + LeftMargin;
 
             long firstTick = (long)(ScrollOffset / GridWidth);
-            long numberOfTicks = (long)(VisibleWidth / GridWidth);
-            long lastTick = firstTick + numberOfTicks;
+            int tickCount = (int)(VisibleWidth / GridWidth) + 1;
 
-            for (long currentTick = firstTick; currentTick <= lastTick; currentTick++)
+            if (!refreshTickContent && _firstTick == firstTick
+                && _stackPanel.Children.Count == tickCount)
+                return;
+
+            // Resize only at viewport/zoom changes; scrolling reuses every label.
+            while (_stackPanel.Children.Count > tickCount)
+                _stackPanel.Children.RemoveAt(_stackPanel.Children.Count - 1);
+            while (_stackPanel.Children.Count < tickCount)
+                _stackPanel.Children.Add(new TextBlock { FontSize = 10d });
+
+            for (int i = 0; i < tickCount; i++)
             {
-                DrawTick(currentTick);
+                TextBlock textBlock = (TextBlock)_stackPanel.Children[i];
+                textBlock.Width = GridWidth;
+                textBlock.Height = Height;
+                textBlock.Text = $"{Math.Round((firstTick + i) * Interval, 0)} {Unit}";
             }
-        }
-
-        /// <summary>
-        /// Set left margin of time scale to align ticks with grid.
-        /// </summary>
-        private void SetLeftMargin()
-        {
-            double left = -(ScrollOffset % GridWidth) - ScaleTextOffset + LeftMargin;
-            Margin = new Thickness(left, 0d, 0d, 0d);
-        }
-
-        /// <summary>
-        /// Draw one tick.
-        /// </summary>
-        private void DrawTick(long tick)
-        {
-            double value = Math.Round(tick * Interval, 0);
-            string text = $"{value} {Unit}";
-
-            TextBlock textBox = new()
-            {
-                Width = GridWidth,
-                Height = Height,
-                Text = text,
-                FontSize = 10d
-            };
-
-            _stackPanel.Children.Add(textBox);
+            _firstTick = firstTick;
         }
     }
 }
