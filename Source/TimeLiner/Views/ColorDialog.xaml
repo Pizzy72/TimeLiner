@@ -12,6 +12,7 @@ Copyright (c) 2021-2026 Christian Pistor
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:TimeLiner.ViewModels"
     xmlns:ui="clr-namespace:TimeLiner.UI"
+    Background="{DynamicResource WindowBackgroundBrush}"
     Title="Color"
     Width="630"
     Height="360"

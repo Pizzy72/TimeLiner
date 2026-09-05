@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 SPDX-License-Identifier: MIT
 Copyright (c) 2021-2026 Christian Pistor
@@ -79,7 +79,7 @@ Copyright (c) 2021-2026 Christian Pistor
             />
     </f:RibbonWindow.CommandBindings>
 
-    <Grid>
+    <Grid Background="{DynamicResource TimeLineBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" MinHeight="100" />
@@ -311,6 +311,7 @@ Copyright (c) 2021-2026 Christian Pistor
 
         <!--  Info text (expandable)  -->
         <Expander
+            Background="{DynamicResource WindowBackgroundBrush}"
             Grid.Row="2"
             ExpandDirection="Up"
             IsExpanded="{Binding Path=IsInfoTextExpanded, Mode=OneWay}"
@@ -422,6 +423,7 @@ Copyright (c) 2021-2026 Christian Pistor
                     IsReadOnly="True"
                     MouseDoubleClick="TextBox_MouseDoubleClick"
                     Background="Transparent"
+                    Style="{DynamicResource TextBoxStyle}"
                     Text="{Binding Path=StartTimeLocatorViewModel.TimeText, Mode=OneWay}"
                     TextWrapping="NoWrap" 
                     />
@@ -442,6 +444,7 @@ Copyright (c) 2021-2026 Christian Pistor
                     Foreground="{DynamicResource EndTimeLocatorBrush}"
                     IsReadOnly="True"
                     MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Style="{DynamicResource TextBoxStyle}"
                     Text="{Binding Path=EndTimeLocatorViewModel.TimeText, Mode=OneWay}"
                     TextWrapping="NoWrap" 
                     />
@@ -463,6 +466,7 @@ Copyright (c) 2021-2026 Christian Pistor
                     Foreground="{DynamicResource SelectedTimeSpanBrush}"
                     IsReadOnly="True"
                     MouseDoubleClick="TextBox_MouseDoubleClick"
+                    Style="{DynamicResource TextBoxStyle}"
                     Text="{Binding Path=LocatorDelta, Mode=OneWay}"
                     TextWrapping="NoWrap" 
                     />

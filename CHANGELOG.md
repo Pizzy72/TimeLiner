@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Improved scrolling performance
+- Improved light and dark theme styling 
 
 ## [2.15.1] - 2026-09-03
 

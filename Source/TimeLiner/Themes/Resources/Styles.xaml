@@ -14,12 +14,78 @@ Copyright (c) 2021-2025 Christian Pistor
 
     <!-- Styles -->
 
+    <!-- Context menu -->
+    <Style x:Key="TimeLinerContextMenuStyle" TargetType="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource ContextMenuBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ContextMenuBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="0,4" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        Padding="{TemplateBinding Padding}">
+                        <ItemsPresenter />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TimeLinerMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextColorBrush}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="14,5" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border
+                        x:Name="ItemBorder"
+                        Background="Transparent"
+                        Padding="{TemplateBinding Padding}">
+                        <ContentPresenter
+                            Content="{TemplateBinding Header}"
+                            ContentStringFormat="{TemplateBinding HeaderStringFormat}"
+                            RecognizesAccessKey="True"
+                            TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ContextMenuMouseOverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TimeLinerMenuSeparatorStyle" TargetType="Separator">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Margin" Value="14,3" />
+        <Setter Property="Background" Value="{DynamicResource ContextMenuSeparatorBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Rectangle Height="1" Fill="{TemplateBinding Background}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Info text expander -->
     <Style x:Key="InfoTextExpanderStyle" TargetType="Expander">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Expander">
-                    <Grid>
+                    <Grid Background="{TemplateBinding Background}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -113,6 +179,30 @@ Copyright (c) 2021-2025 Christian Pistor
         <Setter Property="Foreground" Value="{DynamicResource TextColorBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="CaretBrush" Value="{DynamicResource CaretBrush}" />
+        <Setter Property="ContextMenu">
+            <Setter.Value>
+                <ContextMenu Style="{StaticResource TimeLinerContextMenuStyle}">
+                    <MenuItem
+                        Command="{x:Static ApplicationCommands.Cut}"
+                        CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                        Header="Cut"
+                        InputGestureText="Ctrl+X"
+                        Style="{StaticResource TimeLinerMenuItemStyle}" />
+                    <MenuItem
+                        Command="{x:Static ApplicationCommands.Copy}"
+                        CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                        Header="Copy"
+                        InputGestureText="Ctrl+C"
+                        Style="{StaticResource TimeLinerMenuItemStyle}" />
+                    <MenuItem
+                        Command="{x:Static ApplicationCommands.Paste}"
+                        CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                        Header="Paste"
+                        InputGestureText="Ctrl+V"
+                        Style="{StaticResource TimeLinerMenuItemStyle}" />
+                </ContextMenu>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Label -->

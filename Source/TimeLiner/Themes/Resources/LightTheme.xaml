@@ -10,6 +10,7 @@
     <Color x:Key="StartTimeLocatorColor">Red</Color>
     <Color x:Key="EndTimeLocatorColor">Blue</Color>
     <Color x:Key="TimeLineBackgroundColor">White</Color>
+    <Color x:Key="TimeLineGridBackgroundColor">White</Color>
     <Color x:Key="TimeLineGridColor">Gainsboro</Color>
     <Color x:Key="SelectedTimeSpanColor">Green</Color>
     <Color x:Key="CaretColor">Black</Color>
@@ -20,6 +21,7 @@
     <SolidColorBrush x:Key="StartTimeLocatorBrush" Color="{DynamicResource StartTimeLocatorColor}" />
     <SolidColorBrush x:Key="EndTimeLocatorBrush" Color="{DynamicResource EndTimeLocatorColor}" />
     <SolidColorBrush x:Key="TimeLineBackgroundBrush" Color="{DynamicResource TimeLineBackgroundColor}" />
+    <SolidColorBrush x:Key="TimeLineGridBackgroundBrush" Color="{DynamicResource TimeLineGridBackgroundColor}" />
     <SolidColorBrush x:Key="TimeLineGridBrush" Color="{DynamicResource TimeLineGridColor}" />
     <SolidColorBrush x:Key="SelectedTimeSpanBrush" Color="{DynamicResource SelectedTimeSpanColor}" />
     <SolidColorBrush x:Key="CaretBrush" Color="{DynamicResource CaretColor}" />
@@ -27,6 +29,14 @@
     <SolidColorBrush x:Key="InfoExpanderHoverBrush" Color="#FF3B9BE5" />
     <SolidColorBrush x:Key="InfoExpanderHoverBorderBrush" Color="#FF62AAE2" />
     <SolidColorBrush x:Key="InfoExpanderPressedBrush" Color="#FF2585CF" />
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFF7F7F7" />
+    <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.RibbonTabItem.Active.Background" Color="#FFF7F7F7" />
+    <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.RibbonTabControl.Background" Color="#FFF7F7F7" />
+    <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.RibbonTabControl.TabsGrid.Background" Color="#FFF7F7F7" />
+    <SolidColorBrush x:Key="ContextMenuBackgroundBrush" Color="#FFF7F7F7" />
+    <SolidColorBrush x:Key="ContextMenuBorderBrush" Color="#FFB8B8B8" />
+    <SolidColorBrush x:Key="ContextMenuSeparatorBrush" Color="#FFD0D0D0" />
+    <SolidColorBrush x:Key="ContextMenuMouseOverBrush" Color="#FFE5E5E5" />
 
     <!-- Scrollbars -->
     <SolidColorBrush x:Key="Fluent.Ribbon.Brushes.ScrollBar.Background" Color="#FFF0F0F0" />
