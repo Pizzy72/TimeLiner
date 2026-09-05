@@ -51,6 +51,20 @@ namespace TimeLiner.ViewModels
         /// <see cref="IsLoaded"/>
         private bool _isLoaded;
 
+        private bool _hasDeferredScrollUpdate;
+
+        // Maintained by the owning list on structural changes, never searched while scrolling.
+        internal int RowIndex { get; set; } = -1;
+
+        internal bool IsInVerticalViewport
+        {
+            get
+            {
+                double top = RowIndex * Height - TimeLinesViewModel.VerticalScrollOffset;
+                return RowIndex >= 0 && top >= 0 && top < TimeLinesViewModel.TimeLinesVisibleHeight;
+            }
+        }
+
         /// <summary>
         /// The model of the associated timeline.
         /// </summary>
@@ -259,11 +273,38 @@ namespace TimeLiner.ViewModels
             switch (e.PropertyName)
             {
                 case nameof(TimeLinesViewModel.Scale):
-                case nameof(TimeLinesViewModel.HorizontalScrollOffset):
-                case nameof(TimeLinesViewModel.TimeLinesVisibleWidth):
                     NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
                     break;
+
+                case nameof(TimeLinesViewModel.HorizontalScrollOffset):
+                    if (IsInVerticalViewport)
+                        NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
+                    else
+                        _hasDeferredScrollUpdate = true;
+                    break;
+
+                case nameof(TimeLinesViewModel.TimeLinesVisibleWidth):
+                    _hasDeferredScrollUpdate = true;
+                    RefreshDeferredScrollUpdate();
+                    break;
+
+                case nameof(TimeLinesViewModel.TimeLineCollectionView):
+                case null:
+                case "":
+                    RefreshDeferredScrollUpdate();
+                    break;
             }
+        }
+
+        private void RefreshDeferredScrollUpdate()
+        {
+            if (!_hasDeferredScrollUpdate || !IsInVerticalViewport)
+                return;
+
+            _hasDeferredScrollUpdate = false;
+            NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
+            foreach (TimeLineItemViewModel item in _timeLineItems)
+                item.RefreshViewportGeometry();
         }
 
         /// <summary>
