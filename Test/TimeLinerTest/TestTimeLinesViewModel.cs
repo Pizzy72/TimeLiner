@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -880,8 +880,8 @@ namespace TimeLinerTest
             _timeLinesViewModel.TimeLinesVisibleHeight = 30;
             await _timeLinesViewModel.LoadAsync(@"TestData\Minutes.csv", 1000);
             _timeLinesViewModel.Scale = ScaleIndex.Second;
-            var first = _timeLinesViewModel.TimeLines[0].TimeLineItems[0];
-            var hidden = _timeLinesViewModel.TimeLines[1].TimeLineItems[0];
+            TimeLineItemViewModel first = _timeLinesViewModel.TimeLines[0].TimeLineItems[0];
+            TimeLineItemViewModel hidden = _timeLinesViewModel.TimeLines[1].TimeLineItems[0];
             List<string> firstChanges = [];
             List<string> hiddenChanges = [];
             first.PropertyChanged += (_, e) => firstChanges.Add(e.PropertyName);
@@ -911,8 +911,8 @@ namespace TimeLinerTest
             _timeLinesViewModel.TimeLinesVisibleHeight = 30;
             await _timeLinesViewModel.LoadAsync(@"TestData\Minutes.csv", 1000);
             _timeLinesViewModel.Scale = ScaleIndex.Second;
-            var row = _timeLinesViewModel.TimeLines[4];
-            var item = row.TimeLineItems[0];
+            TimeLineViewModel row = _timeLinesViewModel.TimeLines[4];
+            TimeLineItemViewModel item = row.TimeLineItems[0];
             List<string> changes = [];
             item.PropertyChanged += (_, e) => changes.Add(e.PropertyName);
             _timeLinesViewModel.HorizontalScrollOffset = 50;

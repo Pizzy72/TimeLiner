@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using System;
@@ -237,12 +237,12 @@ namespace TimeLiner.Views
 
                     // Capture geometry once for the entire row, before changing widths.
                     List<FrameworkElement> children = FindVisualChildren<FrameworkElement>(host).ToList();
-                    var obstacles = children
+                    List<(object DataContext, double Left)> obstacles = children
                         .Where(x => GetIsTextObstacle(x) && x.IsVisible)
                         .Select(x => (x.DataContext, Bounds: GetBoundsRelativeTo(x, host)))
                         .Where(x => !x.Bounds.IsEmpty)
                         .Select(x => (x.DataContext, x.Bounds.Left)).ToList();
-                    var anchors = children
+                    List<(object DataContext, double Value)> anchors = children
                         .Where(x => GetIsTextAnchor(x) && x.IsVisible)
                         .Select(x => (x.DataContext, Left: GetLeftRelativeTo(x, host)))
                         .Where(x => x.Left.HasValue)

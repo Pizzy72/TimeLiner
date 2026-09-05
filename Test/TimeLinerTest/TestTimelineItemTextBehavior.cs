@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -19,7 +19,7 @@ namespace TimeLinerTest
         {
             Canvas host = new() { Width = 800, Height = 40 };
             TimelineItemTextBehavior.SetIsTimelineHost(host, true);
-            var items = new (Canvas Anchor, TextBlock Text)[40];
+            (Canvas Anchor, TextBlock Text)[] items = new (Canvas Anchor, TextBlock Text)[40];
             for (int i = 0; i < items.Length; i++)
                 items[i] = AddItem(host, 60 + i * 18, 4);
 
@@ -67,9 +67,9 @@ namespace TimeLinerTest
         {
             Canvas host = new() { Width = 800, Height = 40 };
             TimelineItemTextBehavior.SetIsTimelineHost(host, true);
-            var first = AddItem(host, 60, 4);
-            var second = AddItem(host, 160, 18);
-            var last = AddItem(host, 260, 18);
+            (Canvas Anchor, TextBlock Text) first = AddItem(host, 60, 4);
+            (Canvas Anchor, TextBlock Text) second = AddItem(host, 160, 18);
+            (Canvas Anchor, TextBlock Text) last = AddItem(host, 260, 18);
             Window window = new()
             {
                 Content = host,
