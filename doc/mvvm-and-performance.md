@@ -86,6 +86,30 @@ For typical data sizes, this approach performs well and provides a responsive us
 
 ## Known Performance Limitations
 
+### Scroll update batching
+
+`TimelineItemTextBehavior` batches label-width updates per timeline through the
+dispatcher. Moving several item anchors before the dispatcher runs therefore
+queues one row update. The update traverses the visual tree and captures obstacle
+and anchor geometry once, then shares those values across the row's labels.
+Previously, each moving anchor queued an update for every label, and each label
+update traversed the row again.
+
+The STA regression test `ScrollBatch_CoalescesLabelUpdates_AndPreservesSpacing`
+moves 40 anchors three times before flushing layout and verifies both bounded
+dispatcher work and the resulting label widths. The previous implementation
+queued 4,800 Loaded-priority operations in this scenario. This measures queued
+UI work, not application frame rate or end-to-end scrolling latency.
+
+Further candidates for profiling are the collection-view filters refreshed on
+scroll, per-item property notifications (including off-screen items), and
+`TimeScaleView.DrawScale`, which recreates tick controls for each scroll offset.
+Label collision comparisons still scale quadratically with the number of items
+in a row; batching removes redundant scheduling and visual-tree traversal, but
+does not introduce a spatial index.
+
+### Large data sets
+
 When working with very large data models, performance may degrade noticeably.
 
 Typical scenarios include:
