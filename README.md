@@ -108,5 +108,5 @@ restored from NuGet; their notices are recorded in
 ## Acknowledgements
 
 Parts of the TimeLiner codebase, tests, and documentation were developed with
-assistance from OpenAI Codex. All resulting changes were reviewed and integrated
+assistance from Microsoft Copilot and OpenAI Codex. All resulting changes were reviewed and integrated
 by the project maintainer.
