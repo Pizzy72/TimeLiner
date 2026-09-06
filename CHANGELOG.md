@@ -4,6 +4,14 @@ All notable changes to TimeLiner are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.15.3] - 2026-09-06
+
+### Fixed
+
+- Fixed keyboard navigation in Ribbon controls so global timeline shortcuts are not processed by Fluent.Ribbon.
+- Fixed arrow-key navigation in ComboBox controls.
+- Fixed `Ctrl+Plus` and `Ctrl+Minus` zoom shortcuts toggling focused Ribbon controls.
+
 ## [2.15.2] - 2026-09-05
 
 ### Changed

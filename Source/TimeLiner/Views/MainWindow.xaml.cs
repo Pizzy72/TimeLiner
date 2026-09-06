@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using Microsoft.Win32;
@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 using TimeLiner.UI;
 using TimeLiner.UI.MessageBox;
@@ -293,11 +295,19 @@ namespace TimeLiner.Views
         /// </summary>
         private void Ribbon_KeyDown(object sender, KeyEventArgs e)
         {
+            if (IsInsideComboBox(e.OriginalSource as DependencyObject)
+                || IsInsideComboBox(Keyboard.FocusedElement as DependencyObject))
+            {
+                return;
+            }
+
             // Suppress keys on the ribbon which are needed on the timeline grid.
             switch (e.Key)
             {
                 case Key.Left:
                 case Key.Right:
+                case Key.Up:
+                case Key.Down:
                     e.Handled = true;
                     break;
             }
@@ -388,7 +398,8 @@ namespace TimeLiner.Views
         /// </remarks>
         private async void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Source is Fluent.ComboBox)
+            if (IsInsideComboBox(e.OriginalSource as DependencyObject)
+                || IsInsideComboBox(Keyboard.FocusedElement as DependencyObject))
             {
                 // Let ComboBox handle its key events.
                 return;
@@ -397,92 +408,151 @@ namespace TimeLiner.Views
             switch (e.Key)
             {
                 case Key.C:
-                    if (Keyboard.IsKeyDown(Key.LeftShift))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
                         _settingsViewModel.ToggleTimeLineHeight();
                     else
                         _settingsViewModel.ToggleTimeGridWidth();
+                    e.Handled = true;
                     break;
                 case Key.F:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                    {
                         TimeLinesViewModel.FindCommand.Execute(null);
+                        e.Handled = true;
+                    }
                     break;
                 case Key.D:
                     _settingsViewModel.ToggleTheme();
+                    e.Handled = true;
                     break;
                 case Key.N:
                     _settingsViewModel.ToogleNameVisibility();
+                    e.Handled = true;
                     break;
                 case Key.F5:
+                    e.Handled = true;
                     await ReloadViewModelAsync();
                     break;
                 case Key.Home:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                         TimeLinesViewModel.ScrollTimeLinesToTopCommand.Execute(null);
                     else
                         TimeLinesViewModel.ScrollTimeLinesToStartCommand.Execute(null);
+                    e.Handled = true;
                     break;
                 case Key.End:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                         TimeLinesViewModel.ScrollTimeLinesToBottomCommand.Execute(null);
                     else
                         TimeLinesViewModel.ScrollTimeLinesToEndCommand.Execute(null);
+                    e.Handled = true;
                     break;
                 case Key.Down:
-                    if (Keyboard.IsKeyDown(Key.LeftShift))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
                         TimeLinesViewModel.ScrollMultipleTimeLinesUpCommand.Execute(null);
                     else
                         TimeLinesViewModel.ScrollOneTimeLineUpCommand.Execute(null);
+                    e.Handled = true;
                     break;
                 case Key.Up:
-                    if (Keyboard.IsKeyDown(Key.LeftShift))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
                         TimeLinesViewModel.ScrollMultipleTimeLinesDownCommand.Execute(null);
                     else
                         TimeLinesViewModel.ScrollOneTimeLineDownCommand.Execute(null);
+                    e.Handled = true;
                     break;
                 case Key.PageDown:
                     TimeLinesViewModel.ScrollTimeLinePageUpCommand.Execute(null);
+                    e.Handled = true;
                     break;
                 case Key.PageUp:
                     TimeLinesViewModel.ScrollTimeLinePageDownCommand.Execute(null);
+                    e.Handled = true;
                     break;
                 case Key.Left:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                         TimeLinesViewModel.GotoPreviousCommand.Execute(null);
                     else
                         TimeLinesViewModel.ScrollTimeLinesLeftCommand.Execute(null);
+                    e.Handled = true;
                     break;
                 case Key.Right:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                         TimeLinesViewModel.GotoNextCommand.Execute(null);
                     else
                         TimeLinesViewModel.ScrollTimeLinesRightCommand.Execute(null);
+                    e.Handled = true;
                     break;
                 case Key.OemPlus:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                case Key.Add:
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                    {
                         TimeLinesViewModel.ZoomInCommand.Execute(null);
+                        e.Handled = true;
+                    }
                     break;
                 case Key.OemMinus:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                case Key.Subtract:
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                    {
                         TimeLinesViewModel.ZoomOutCommand.Execute(null);
+                        e.Handled = true;
+                    }
                     break;
                 case Key.T:
                     _settingsViewModel.ToggleTimeFormat();
+                    e.Handled = true;
                     break;
                 case Key.L:
                     _settingsViewModel.ToggleTimeLocatorLocking();
+                    e.Handled = true;
                     break;
                 case Key.Escape:
                     TimeLinesViewModel.DeselectTimeLineItem();
+                    e.Handled = true;
                     break;
                 case Key.Z:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                    {
                         TimeLinesViewModel.UndoCommand.Execute(null);
+                        e.Handled = true;
+                    }
                     break;
                 case Key.Y:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                    {
                         TimeLinesViewModel.RedoCommand.Execute(null);
+                        e.Handled = true;
+                    }
                     break;
             }
+        }
+
+        /// <summary>
+        /// Determines whether the event originated from a Fluent ComboBox or one
+        /// of its internal visual elements, such as a ComboBoxItem.
+        /// </summary>
+        private static bool IsInsideComboBox(DependencyObject source)
+        {
+            while (source != null)
+            {
+                if (source is Fluent.ComboBox)
+                {
+                    return true;
+                }
+
+                if (source is ComboBoxItem
+                    && ItemsControl.ItemsControlFromItemContainer(source) is Fluent.ComboBox)
+                {
+                    return true;
+                }
+
+                source = source is Visual || source is Visual3D
+                    ? VisualTreeHelper.GetParent(source)
+                    : (source as FrameworkContentElement)?.Parent;
+            }
+
+            return false;
         }
 
         /// <summary>
