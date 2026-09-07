@@ -262,6 +262,12 @@ namespace TimeLiner.ViewModels
         public bool IsTimeSpanVisible => Width > 0d;
 
         /// <summary>
+        /// Is true if the item intersects the current horizontal viewport.
+        /// </summary>
+        internal bool IsInHorizontalViewport =>
+            IsTimeSpan ? IsTimeSpanVisible : IsTimeEventVisible;
+
+        /// <summary>
         /// The tool-tip of the timeline item.
         /// </summary>
         public string ToolTip
@@ -480,10 +486,6 @@ namespace TimeLiner.ViewModels
                     NotifyPropertyChanged(nameof(IsTimeEventVisible));
                     break;
 
-                case nameof(TimeLinesViewModel.HorizontalScrollOffset):
-                    if (TimeLineViewModel.IsInVerticalViewport)
-                        RefreshViewportGeometry();
-                    break;
             }
         }
 

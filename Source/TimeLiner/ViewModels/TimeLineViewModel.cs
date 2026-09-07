@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Data;
 using System.Windows.Input;
 using TimeLiner.Common;
@@ -24,6 +25,10 @@ namespace TimeLiner.ViewModels
         /// <see cref="TimeLineItems"/>
         /// <see cref="TimeLineItemCollectionView"/>
         private List<TimeLineItemViewModel> _timeLineItems = [];
+
+        private readonly ICollectionView _timeLineItemCollectionView;
+
+        private HashSet<TimeLineItemViewModel> _visibleTimeLineItems;
 
         /// <see cref="IsUniversalTime" />
         private bool _isUniversalTime;
@@ -105,8 +110,14 @@ namespace TimeLiner.ViewModels
 
             foreach (TimeLineItemModel timeLineItemModel in TimeLineModel.TimeLineItems)
             {
-                _timeLineItems.Add(new TimeLineItemViewModel(timeLineItemModel, this, _settingsViewModel, timeLineScaling));
+                TimeLineItemViewModel item = new(timeLineItemModel, this, _settingsViewModel, timeLineScaling);
+                PropertyChangedEventManager.AddHandler(item, TimeLineItem_PropertyChanged, "");
+                _timeLineItems.Add(item);
             }
+
+            _timeLineItemCollectionView = CollectionViewSource.GetDefaultView(_timeLineItems);
+            _timeLineItemCollectionView.Filter = o =>
+                _visibleTimeLineItems?.Contains((TimeLineItemViewModel)o) == true;
         }
 
         /// <summary>
@@ -199,23 +210,8 @@ namespace TimeLiner.ViewModels
         {
             get
             {
-                ICollectionView view = CollectionViewSource.GetDefaultView(_timeLineItems);
-
-                double timeLineLeft = -_settingsViewModel.TimeLineSpacerLeft;
-                double timeLineRight = timeLineLeft + TimeLinesViewModel.TimeLinesVisibleWidth;
-
-                view.Filter = o =>
-                {
-                    TimeLineItemViewModel timeLineItem = (TimeLineItemViewModel)o;
-
-                    double timeLineItemLeft = timeLineItem.Left;
-
-                    bool isVisible = timeLineItemLeft >= timeLineLeft && timeLineItemLeft < timeLineRight;
-
-                    return isVisible;
-                };
-
-                return view;
+                EnsureVisibleTimeLineItems();
+                return _timeLineItemCollectionView;
             }
         }
 
@@ -273,12 +269,12 @@ namespace TimeLiner.ViewModels
             switch (e.PropertyName)
             {
                 case nameof(TimeLinesViewModel.Scale):
-                    NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
+                    InvalidateHorizontalViewport();
                     break;
 
                 case nameof(TimeLinesViewModel.HorizontalScrollOffset):
                     if (IsInVerticalViewport)
-                        NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
+                        RefreshHorizontalViewport();
                     else
                         _hasDeferredScrollUpdate = true;
                     break;
@@ -302,9 +298,47 @@ namespace TimeLiner.ViewModels
                 return;
 
             _hasDeferredScrollUpdate = false;
-            NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
-            foreach (TimeLineItemViewModel item in _timeLineItems)
+            RefreshHorizontalViewport();
+        }
+
+        private void InvalidateHorizontalViewport()
+        {
+            _visibleTimeLineItems = null;
+            if (IsInVerticalViewport)
+                RefreshHorizontalViewport();
+            else
+                _hasDeferredScrollUpdate = true;
+        }
+
+        private void EnsureVisibleTimeLineItems()
+        {
+            if (_visibleTimeLineItems == null)
+            {
+                _visibleTimeLineItems = CalculateVisibleTimeLineItems();
+                _timeLineItemCollectionView.Refresh();
+            }
+        }
+
+        private HashSet<TimeLineItemViewModel> CalculateVisibleTimeLineItems()
+        {
+            return _timeLineItems.Where(item => item.IsInHorizontalViewport).ToHashSet();
+        }
+
+        private void RefreshHorizontalViewport()
+        {
+            HashSet<TimeLineItemViewModel> oldVisibleItems = _visibleTimeLineItems;
+            HashSet<TimeLineItemViewModel> newVisibleItems = CalculateVisibleTimeLineItems();
+
+            IEnumerable<TimeLineItemViewModel> changedItems = oldVisibleItems == null
+                ? newVisibleItems
+                : oldVisibleItems.Union(newVisibleItems);
+
+            _visibleTimeLineItems = newVisibleItems;
+
+            foreach (TimeLineItemViewModel item in changedItems)
                 item.RefreshViewportGeometry();
+
+            _timeLineItemCollectionView.Refresh();
         }
 
         /// <summary>
@@ -315,9 +349,16 @@ namespace TimeLiner.ViewModels
             switch (e.PropertyName)
             {
                 case nameof(SettingsViewModel.IsCompactTimeGrid):
-                    NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
+                    InvalidateHorizontalViewport();
                     break;
             }
+        }
+
+        private void TimeLineItem_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(TimeLineItemViewModel.StartTime)
+                || e.PropertyName == nameof(TimeLineItemViewModel.EndTime))
+                InvalidateHorizontalViewport();
         }
 
         /// <summary>
@@ -327,7 +368,10 @@ namespace TimeLiner.ViewModels
         {
             TimeLineModel.RemoveTimeLineItem(timeLineItem.TimeLineItemModel);
             bool isDeleted = _timeLineItems.Remove(timeLineItem);
+            PropertyChangedEventManager.RemoveHandler(timeLineItem, TimeLineItem_PropertyChanged, "");
             timeLineItem.Dispose();
+
+            InvalidateHorizontalViewport();
 
             return isDeleted;
         }
@@ -339,7 +383,9 @@ namespace TimeLiner.ViewModels
         {
             timeLineItem.TimeLineViewModel = this;
             TimeLineModel.AddTimeLineItem(timeLineItem.TimeLineItemModel);
+            PropertyChangedEventManager.AddHandler(timeLineItem, TimeLineItem_PropertyChanged, "");
             _timeLineItems.Add(timeLineItem);
+            InvalidateHorizontalViewport();
         }
 
         /// <summary>
@@ -357,6 +403,7 @@ namespace TimeLiner.ViewModels
 
                     foreach (TimeLineItemViewModel timeLineItem in _timeLineItems)
                     {
+                        PropertyChangedEventManager.RemoveHandler(timeLineItem, TimeLineItem_PropertyChanged, "");
                         timeLineItem.Dispose();
                     }
 

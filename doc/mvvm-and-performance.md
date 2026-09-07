@@ -215,6 +215,40 @@ difference is small relative to run-to-run variation. Because both builds use
 the same simplified views here, this comparison does not quantify the earlier
 text-collision and time-scale view optimizations or whole-application FPS.
 
+### Limiting updates to horizontally visible items
+
+Each timeline retains one collection view and a set of items that intersect its
+horizontal viewport. A scroll refreshes geometry bindings only for the union of
+the previous and current sets: items receive one final update when leaving the
+viewport and an immediate update when entering it. Fully off-screen items no
+longer receive four geometry notifications on every scroll step. Time spans are
+considered visible when any part intersects the viewport, including spans whose
+start lies beyond its left edge.
+
+The current implementation scans the items in each vertically visible timeline
+to construct the set, then uses constant-time membership checks in the collection
+filter. For the observed tens of items per row this is substantially cheaper than
+propagating WPF binding updates for every item. A start-time index remains a
+possible follow-up if profiles show the scan itself becoming significant for
+timelines with hundreds or thousands of items.
+
+The opt-in benchmark supports a full-range sweep by setting
+`TIMELINER_BENCHMARK_FULL_RANGE=1`. With a representative 45,919-byte data set
+(361 items across 16 rows, maximum 78 items in one row), the sweep covered
+0 through 802,512.70 pixels. Medians of five samples against the clean
+2.15.3.0 baseline, under the same simplified WPF harness and .NET 10.0.11:
+
+| Horizontal metric / 120 steps | 2.15.3.0 baseline | Visible-item sets |
+| --- | ---: | ---: |
+| Elapsed time | 12944.09 ms | 236.78 ms |
+| UI-thread allocations | 789220032 bytes | 18686792 bytes |
+| Item notifications | 173280 | 1656 |
+
+This corresponds to about 98% less elapsed time, 98% fewer allocation bytes and
+99% fewer item notifications in this harness. It intentionally exercises large
+jumps across the complete recording. Ordinary small-step scrolling and the full
+application's text-collision layout can produce different absolute results.
+
 ### Large data sets
 
 When working with very large data models, performance may degrade noticeably.

@@ -82,9 +82,13 @@ namespace TimeLinerTest
             // Bind setters once so reflection is excluded from the measured scroll loop.
             Action<double> setHorizontal = modelType.GetProperty("HorizontalScrollOffset").SetMethod.CreateDelegate<Action<double>>(model);
             Action<double> setVertical = modelType.GetProperty("VerticalScrollOffset").SetMethod.CreateDelegate<Action<double>>(model);
+            Func<double> getHorizontalMaximum = modelType.GetProperty("HorizontalScrollMaximum").GetMethod.CreateDelegate<Func<double>>(model);
+            bool useFullHorizontalRange = Environment.GetEnvironmentVariable("TIMELINER_BENCHMARK_FULL_RANGE") == "1";
+            double horizontalStep = useFullHorizontalRange ? getHorizontalMaximum() / 59d : 10d;
             object[] timelines = ((IEnumerable)modelType.GetProperty("TimeLines").GetValue(model)).Cast<object>().ToArray();
             string binary = modelType.Assembly.Location;
             Console.WriteLine($"BINARY version={modelType.Assembly.GetName().Version} sha256={Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(binary)))} runtime={Environment.Version}");
+            Console.WriteLine($"RANGE horizontal=0..{horizontalStep * 59:F2} full={useFullHorizontalRange}");
             Assert.AreEqual(30d, rowHeight, "Both builds must use normal row height.");
 
             // A fixed WPF binding/layout harness, not the complete application window.
@@ -143,7 +147,7 @@ namespace TimeLinerTest
                             if (vertical)
                                 setVertical((step % 60) * rowHeight);
                             else
-                                setHorizontal((step % 60) * 10);
+                                setHorizontal((step % 60) * horizontalStep);
                             Flush(window);
                         }
                         timer.Stop();
