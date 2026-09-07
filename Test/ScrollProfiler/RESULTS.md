@@ -1,110 +1,108 @@
-# Scrolloptimierung nach 32e4d56
+# Scroll optimization after 32e4d56
 
-## Ergebnis
+## Results
 
-Die vollständige WPF-Anwendung benötigt für die gemessenen Scrollstrecken zwischen
-64 % und 92 % weniger Zeit. Die dichteste Ansicht ist deutlich schneller, erreicht
-aber weiterhin kein gleichmäßig flüssiges Scrollen.
+The full WPF application takes between 64% and 92% less time to complete the
+measured scrolling sequences. The densest view is substantially faster, but
+scrolling is still not consistently smooth.
 
-Verglichen wurden die Quellen von Commit `32e4d56` und der uncommittete Arbeitsstand
-mit zwei Änderungen:
+The comparison covers the source at commit `32e4d56` and the uncommitted working
+tree with two changes:
 
-1. Eine Zeile aktualisiert beim Scrollen weiterhin die Geometrie ihrer betroffenen
-   Items. Ihre Collection wird nur zurückgesetzt, wenn sich die sichtbare Menge
-   geändert hat. Dadurch bleiben vorhandene Item-Templates meist erhalten.
-2. Textanker melden ihren `DependencyPropertyDescriptor`-Listener beim Entladen ab
-   und beim erneuten Laden wieder an. Zuvor hielt dieser Listener entfernte Anker
-   einschließlich ihrer Views und Bindungen im Speicher.
+1. During scrolling, each row still updates the geometry of its affected items.
+   Its collection is reset only when the visible set changes. This preserves
+   existing item templates in most cases.
+2. Text anchors unsubscribe their `DependencyPropertyDescriptor` listener when
+   unloaded and subscribe again when reloaded. Previously, this listener retained
+   removed anchors in memory, including their views and bindings.
 
-Die vorhandene Versionsanhebung auf 2.15.4.0 ist eine bereits zuvor bestehende
-Änderung im Arbeitsverzeichnis.
+The version bump to 2.15.4.0 was already present in the working tree before this work.
 
-## Messverfahren
+## Measurement method
 
-Messung am 7. September 2026 mit .NET 10.0.11, WPF-Rendering-Tier 2, 125 % DPI,
-heller Standarddarstellung und sichtbaren Item-Namen. Alle 16 Zeilen mit insgesamt
-361 Items passen vertikal in das Fenster. Der Timeline-Viewport misst
-1263,6 × 593,75 DIPs.
+Measured on September 7, 2026, with .NET 10.0.11, WPF rendering tier 2, 125% DPI,
+the default light appearance, and visible item names. All 16 rows containing
+361 items fit vertically in the window. The timeline viewport measures
+1263.6 × 593.75 DIPs.
 
-Je Zoomstufe: ein Aufwärmdurchlauf, danach drei Wiederholungen mit 30 kontinuierlichen
-10-DIP-Schritten. Angefordert werden Schritte alle 16,67 ms auf Input-Priorität.
-Die tatsächliche Ausführung verzögert sich unter Last. Beide Stände verwenden
-dieselben dichten Startpositionen und jeweils 300 DIPs Scrollstrecke.
-Die Werte in den Tabellen sind Mediane der drei Wiederholungen.
-Messaufbau und Reproduktion: [README](README.md).
+Each zoom level uses one warm-up run followed by three repetitions of 30 continuous
+10-DIP steps. Steps are requested every 16.67 ms at Input priority.
+Actual execution is delayed under load. Both versions use the same dense starting
+positions and scroll 300 DIPs per run. Tables show the medians of the three
+repetitions. For setup and reproduction, see the [README](README.md).
 
-Frühe Diagnoseversuche mit Scrolländerungen direkt im Rendercallback und sehr langen
-Durchläufen wurden verworfen. Die folgenden Ergebnisse stammen ausschließlich aus
-vollständig abgeschlossenen, eingabegesteuerten Durchläufen.
+Early diagnostic attempts using scroll changes directly in the rendering callback
+and very long runs were discarded. The results below come exclusively from
+completed, input-driven runs.
 
-| Zoomstufe | Gesamtzeit vorher → nachher | Reduktion | WPF-Frameabstand p95 vorher → nachher |
+| Zoom level | Total time before → after | Reduction | WPF frame interval p95 before → after |
 |---|---:|---:|---:|
-| 5 Minuten | 33,61 → 5,79 s | 82,8 % | 870,99 → 352,42 ms |
-| 1 Minute | 17,49 → 1,31 s | 92,5 % | 455,18 → 79,38 ms |
-| 1 Sekunde | 2,37 → 0,86 s | 63,7 % | 88,67 → 52,81 ms |
+| 5 minutes | 33.61 → 5.79 s | 82.8% | 870.99 → 352.42 ms |
+| 1 minute | 17.49 → 1.31 s | 92.5% | 455.18 → 79.38 ms |
+| 1 second | 2.37 → 0.86 s | 63.7% | 88.67 → 52.81 ms |
 
-Frameabstände stammen aus unterschiedlichen `CompositionTarget.Rendering`-Callbacks,
-nicht aus GPU-Präsentationsmessungen. Die p95-Spalte zeigt den Median der drei
-einzeln berechneten p95-Werte. Gesamtzeiten sind keine FPS-Angabe. Die Basis streut
-stark: 22,51–33,64 s bei 5 Minuten und 13,77–46,74 s bei 1 Minute. Nachher liegen
-diese Bereiche bei 5,66–6,02 s beziehungsweise 1,28–1,36 s.
+Frame intervals are measured between distinct `CompositionTarget.Rendering`
+callbacks, not GPU presentations. The p95 column shows the median of the three
+individually calculated p95 values. Total times are not FPS measurements. The
+baseline varies considerably: 22.51–33.64 s at 5 minutes and 13.77–46.74 s at
+1 minute. After the changes, these ranges are 5.66–6.02 s and 1.28–1.36 s,
+respectively.
 
-| Zoomstufe | Prozess-CPU vorher → nachher | UI-Allokationen vorher → nachher | LayoutUpdated-Zyklen vorher → nachher |
+| Zoom level | Process CPU before → after | UI allocations before → after | LayoutUpdated cycles before → after |
 |---|---:|---:|---:|
-| 5 Minuten | 34,55 → 6,50 s | 2278,25 → 543,37 MB | 164 → 122 |
-| 1 Minute | 17,03 → 1,34 s | 903,36 → 114,13 MB | 364 → 59 |
-| 1 Sekunde | 2,41 → 0,33 s | 194,30 → 17,86 MB | 60 → 31 |
+| 5 minutes | 34.55 → 6.50 s | 2278.25 → 543.37 MB | 164 → 122 |
+| 1 minute | 17.03 → 1.34 s | 903.36 → 114.13 MB | 364 → 59 |
+| 1 second | 2.41 → 0.33 s | 194.30 → 17.86 MB | 60 → 31 |
 
-MB sind dezimale Megabytes. Die Allokationen summieren alle während des Durchlaufs
-auf dem UI-Thread angeforderten Bytes; sie sind kein Maß für den gleichzeitig
-belegten Speicher. LayoutUpdated-Ereignisse zählen globale Layoutzyklen, nicht
-einzelne Measure-/Arrange-Aufrufe.
+MB denotes decimal megabytes. Allocations sum all bytes allocated on the UI thread
+during a run; they do not measure memory held simultaneously. LayoutUpdated events
+count global layout cycles, not individual Measure/Arrange calls.
 
-| Zoomstufe | Collection-Resets vorher → nachher | Item-Loaded vorher → nachher | Textkollisionen: Callback-Zeit vorher → nachher |
+| Zoom level | Collection resets before → after | Item Loaded events before → after | Text collisions: callback time before → after |
 |---|---:|---:|---:|
-| 5 Minuten | 480 → 67 | 6588 → 1158 | 631,11 → 443,44 ms |
-| 1 Minute | 480 → 25 | 2383 → 172 | 272,86 → 154,34 ms |
-| 1 Sekunde | 480 → 2 | 457 → 8 | 46,87 → 20,30 ms |
+| 5 minutes | 480 → 67 | 6588 → 1158 | 631.11 → 443.44 ms |
+| 1 minute | 480 → 25 | 2383 → 172 | 272.86 → 154.34 ms |
+| 1 second | 480 → 2 | 457 → 8 | 46.87 → 20.30 ms |
 
-Ein Zwischenstand mit ausschließlich der Reset-Vermeidung erreichte bereits
-6,43 / 1,48 / 0,85 s Gesamtzeit. Der Hauptgewinn stammt damit von erhaltenen Views.
-Der zusätzliche Nutzen der Listener-Korrektur ist durch den GC-Lebensdauertest
-belegt; ihr isolierter Zeitgewinn lässt sich aus diesen schwankenden Läufen nicht
-zuverlässig quantifizieren.
+An intermediate version with reset avoidance alone already achieved total times
+of 6.43 / 1.48 / 0.85 s. Preserving views therefore provides the main improvement.
+The additional benefit of the listener fix is demonstrated by the GC lifetime
+test; its isolated timing benefit cannot be quantified reliably from these
+variable runs.
 
-## Regressionen
+## Regression testing
 
-- 166 Regressionstests erfolgreich, einschließlich Zoom, Sichtbarkeit, bestehender
-  Scrolltests und vier neuer Tests für Containererhalt, beide Scrollrichtungen,
-  Freigabe entladener Textanker und Wiederanmeldung ihrer Listener.
-- Der neue GC-Test scheiterte vor der Listener-Korrektur auch nach drei
-  vollständigen GC-Durchläufen und besteht nach der Korrektur.
-- 15 reale WPF-Layoutzustände über drei Zoomstufen einschließlich Rückwärtsscrollen
-  stimmen mit der Baseline überein: 4627 verglichene Anker-, Hindernis- und
-  Textfeld-Geometrien. Verglichen wurden Sichtbarkeit, Position und Breiten auf
-  0,001 DIP; es handelt sich nicht um einen Pixelvergleich.
+- 166 regression tests passed, including zoom, visibility, existing scrolling
+  tests, and four new tests covering container preservation, both scroll
+  directions, collection of unloaded text anchors, and listener resubscription.
+- Before the listener fix, the new GC test failed even after three full GC cycles;
+  it passes after the fix.
+- 15 actual WPF layout states across three zoom levels, including backward
+  scrolling, match the baseline: 4627 anchor, obstacle, and text box geometries
+  compared. Visibility, position, and widths were compared to 0.001 DIP;
+  this is not a pixel comparison.
 
-## Verbleibendes Potenzial
+## Remaining potential
 
-Beim Ein- oder Austritt eines Items setzt die Anwendung noch die gesamte betroffene
-Zeile zurück. Die 1158 Item-Ladevorgänge und hohen Frame-Spitzen in der dichtesten
-Ansicht sprechen dafür, als nächsten Schritt einzelne Collection-Änderungen statt
-vollständiger Zeilen-Resets zu untersuchen. Die Textkollisionserkennung ist weiterhin
-quadratisch pro Zeile, beansprucht hier aber wesentlich weniger Zeit als der übrige
-UI-Aufbau. Eine aufwendigere Suchstruktur wäre deshalb derzeit nicht der erste Ansatz.
+When an item enters or leaves the viewport, the application still resets the
+entire affected row. The 1158 item load events and high frame spikes in the
+densest view suggest investigating individual collection changes instead of full
+row resets next. Text collision detection remains quadratic per row, but here
+it takes substantially less time than the rest of UI construction. A more
+complex search structure would therefore not be the first approach at this stage.
 
-Die Messungen betreffen diese drei horizontalen Strecken. Sie belegen weder eine
-allgemeine FPS-Garantie noch Verbesserungen für beliebige Dateien oder vertikales
-Scrollen. Die Änderungen sind zur Prüfung uncommittet.
+These measurements cover the three horizontal scrolling sequences. They establish
+neither a general FPS guarantee nor improvements for arbitrary files or vertical
+scrolling. The changes remain uncommitted for review.
 
-## Rohdaten
+## Raw data
 
-Lokale, ignorierte Artefakte unter `artifacts/scroll-profile`:
+Local, ignored artifacts under `artifacts/scroll-profile`:
 
-- `baseline-1.json`: vollständige Basismessung, einschließlich einzelner Frameabstände.
-- `candidate-1.json`: Zwischenstand mit Reset-Vermeidung.
-- `final-1.json`: Abschlussmessung mit beiden Änderungen.
-- `geometry-baseline.json`, `geometry-final.json`: Layoutvergleich.
-- `regression.log`: Regressionssuite.
+- `baseline-1.json`: complete baseline measurement, including individual frame intervals.
+- `candidate-1.json`: intermediate version with reset avoidance.
+- `final-1.json`: final measurement with both changes.
+- `geometry-baseline.json`, `geometry-final.json`: layout comparison.
+- `regression.log`: regression suite.
 
-Die JSON-Metadaten enthalten jeweils den SHA-256-Hash des Profiling-Builds.
+The JSON metadata includes the SHA-256 hash of each profiling build.

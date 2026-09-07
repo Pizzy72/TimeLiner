@@ -1,49 +1,50 @@
-# WPF-Scrollprofil
+# WPF scroll profiling
 
-Dieser optionale Messläufer startet die vollständige Anwendung über `App.Run()`:
-Hauptfenster, Ribbon, echte Item-Templates, Zeitskala und Textkollisionserkennung.
-Er gehört nicht zum normalen Build oder zur automatischen Testsuite.
+This optional runner starts the full application through `App.Run()`:
+main window, ribbon, actual item templates, time scale, and text collision detection.
+It is not part of the normal build or automated test suite.
 
-## Aufbau
+## Setup
 
-`ScrollProfiler.targets` ergänzt einen Messstartpunkt und aktiviert `SCROLL_PROFILE`.
-Damit werden zusätzliche Zähler für natürliche Textbreitenmessungen kompiliert;
-im normalen Anwendungsbuild sind diese Zähler und Zeitmessungen nicht enthalten. Der Anwendungscode
-und sämtliche WPF-Ressourcen werden aus dem jeweils untersuchten Stand kompiliert.
-Benutzereinstellungen werden beim Start durch Standardwerte und eine Speicherung im
-Arbeitsspeicher ersetzt. Die Eingabedatei wird ausschließlich gelesen; ihr Name und
-ihre Textinhalte stehen nicht im JSON-Bericht.
+`ScrollProfiler.targets` adds a profiling entry point and enables `SCROLL_PROFILE`.
+This compiles additional counters for natural text width measurements;
+these counters and timings are absent from normal application builds. Application
+code and all WPF resources are compiled from the source version under investigation.
+At startup, user settings are replaced with defaults and in-memory persistence.
+The input file is read only; its name and text contents are not included in the
+JSON report.
 
-Die Messung verwendet ein sichtbares Fenster mit 1280 × 900 DIPs und drei Zoomstufen:
-5 Minuten, 1 Minute und 1 Sekunde. Pro Zoomstufe wird rechnerisch eine dichte Stelle
-ausgewählt. Auf einen Aufwärmdurchlauf folgen drei Messdurchläufe mit jeweils
-30 horizontalen Schritten zu 10 DIPs. Ein DispatcherTimer auf `Input`-Priorität fordert
-Schritte im Abstand von 16,67 ms an. Bei ausgelastetem UI-Thread werden sie später
-ausgeführt; die tatsächlich benötigte Gesamtdauer wird erfasst.
+Measurement uses a visible 1280 × 900 DIP window and three zoom levels:
+5 minutes, 1 minute, and 1 second. A dense location is selected computationally
+for each zoom level. One warm-up run is followed by three measured runs, each
+with 30 horizontal steps of 10 DIPs. A DispatcherTimer at `Input` priority requests
+steps every 16.67 ms. A busy UI thread executes them later; the actual total
+duration is recorded.
 
-Erfasst werden Prozess-CPU-Zeit, Allokationen des UI-Threads, Collection-Resets,
-Item-Loaded-Ereignisse, globale WPF-LayoutUpdated-Ereignisse und die Laufzeit der
-Dispatcher-Callbacks von `TimelineItemTextBehavior`. Die Zuordnung der Callbacks
-verwendet das private WPF-Feld `DispatcherOperation._method` und prüft dessen
-Vorhandensein beim Start. Ein Runtime-Wechsel kann eine Anpassung erfordern.
+Recorded metrics include process CPU time, UI-thread allocations, collection
+resets, item Loaded events, global WPF LayoutUpdated events, and the duration of
+`TimelineItemTextBehavior` dispatcher callbacks. Callback identification uses
+the private WPF field `DispatcherOperation._method` and checks for its presence
+at startup. A runtime change may require an adjustment.
 
-`TextWidthCalls` zählt Breitenabfragen, `TextWidthMeasurements` tatsächlich erzeugte
-`FormattedText`-Messungen. `TextWidthMs` erfasst deren Konstruktion und Breitenberechnung,
-ohne Cache-Abfragen. Ältere Quellstände ohne diese optionalen Zähler melden dafür
-`null`. Für einen direkten Vergleich ihrer Anteile müssen beide Stände dieselben
-Profiling-Probes enthalten. Die Zählerstände werden außerhalb des Messintervalls gelesen.
+`TextWidthCalls` counts width queries; `TextWidthMeasurements` counts actual
+`FormattedText` measurements created. `TextWidthMs` records their construction
+and width calculation, excluding cache lookups. Older source versions without
+these optional counters report `null` for them. Both versions must contain the
+same profiling probes to compare their contributions directly. Counter values
+are read outside the measurement interval.
 
-Framezeiten sind Abstände verschiedener `CompositionTarget.Rendering`-Callbacks.
-Sie messen den WPF-UI-Takt, **keine GPU-Präsentationszeiten**. LayoutUpdated-Zähler
-sind keine Zähler einzelner Measure-/Arrange-Aufrufe. Allokationen sind kumulierte
-Bytes, kein Speicherhöchststand. Messläufe nacheinander ausführen; währenddessen
-keine Builds, Tests oder UI-Automation parallel starten.
+Frame times are intervals between distinct `CompositionTarget.Rendering` callbacks.
+They measure WPF UI cadence, **not GPU presentation times**. LayoutUpdated counters
+do not count individual Measure/Arrange calls. Allocations are cumulative bytes,
+not peak memory usage. Run measurements sequentially; do not run builds, tests,
+or UI automation concurrently with them.
 
-## Ausführen
+## Running
 
-In PowerShell im Repository-Verzeichnis. `TIMELINER_BENCHMARK_FILE` muss auf eine
-lokale repräsentative Datei gesetzt sein. Ausgaben gehören in das ignorierte
-Verzeichnis `artifacts/scroll-profile`.
+Use PowerShell in the repository directory. `TIMELINER_BENCHMARK_FILE` must point
+to a representative local file. Store output in the ignored directory
+`artifacts/scroll-profile`.
 
 ```powershell
 $root = (Get-Location).Path
@@ -55,17 +56,17 @@ $env:TIMELINER_PROFILE_OUTPUT = Join-Path $root 'artifacts/scroll-profile/curren
 dotnet artifacts/scroll-profile/app-current/TimeLiner.dll
 ```
 
-Für die Baseline den gewünschten Commit mit `git archive` in ein eigenes Verzeichnis
-unter `artifacts` extrahieren. Anschließend dessen `Source/TimeLiner/TimeLiner.csproj`
-mit demselben Targets-Pfad und einem separaten Ausgabeverzeichnis bauen.
-Den aktiven Checkout dabei nicht zurücksetzen.
+For the baseline, extract the desired commit using `git archive` into a separate
+directory under `artifacts`. Then build its `Source/TimeLiner/TimeLiner.csproj`
+using the same targets path and a separate output directory.
+Do not reset the active checkout.
 
-Mit `TIMELINER_PROFILE_VERIFY=1` werden statt Laufzeiten geometrische Zustände bei
-drei Zoomstufen und je fünf Scrollpositionen einschließlich Rückwärtsscrollen
-aufgezeichnet. Der Vergleich umfasst Anker, Hindernisse und automatisch begrenzte
-Textfelder mit Position, Sichtbarkeit und Breite, gerundet auf 0,001 DIP.
-Für den Vergleich der JSON-Dateien den ersten Metadatensatz auslassen.
-Diese Prüfung vergleicht Layoutgeometrie, keine gerasterten Pixel.
+With `TIMELINER_PROFILE_VERIFY=1`, the runner records geometric states instead of
+timings at three zoom levels and five scroll positions each, including backward
+scrolling. The comparison covers anchors, obstacles, and automatically constrained
+text boxes: position, visibility, and width, rounded to 0.001 DIP.
+Skip the first metadata record when comparing the JSON files.
+This check compares layout geometry, not rasterized pixels.
 
 ```powershell
 $env:TIMELINER_PROFILE_VERIFY = '1'
@@ -74,6 +75,6 @@ dotnet artifacts/scroll-profile/app-current/TimeLiner.dll
 Remove-Item Env:TIMELINER_PROFILE_VERIFY
 ```
 
-Nach Profiling-Builds den normalen Release-Build beziehungsweise die Tests ohne
-die zusätzlichen MSBuild-Eigenschaften ausführen. Für normale Anwendungspakete
-keine Dateien aus den Profiling-Ausgabeverzeichnissen verwenden.
+After profiling builds, run the normal Release build or tests without the
+additional MSBuild properties. Do not use files from profiling output directories
+for normal application packages.

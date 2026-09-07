@@ -1,111 +1,110 @@
-# Inkrementelle Sichtbarkeit nach c147575
+# Incremental visibility after c147575
 
-## Ergebnis
+## Results
 
-Die inkrementelle Aktualisierung verbessert besonders die dichte Ansicht. Dort
-sinkt die Gesamtzeit einer Scrollstrecke um 59,4 %, der p95-WPF-Frameabstand um
-80,8 %. Beim Scrollen entstehen keine Collection-Resets mehr. Die Sekundenansicht
-bleibt zeitlich innerhalb der Messstreuung praktisch unverändert.
+Incremental updates improve the dense view in particular. Total time for its
+scrolling sequence falls by 59.4%, and the p95 WPF frame interval by 80.8%.
+Scrolling no longer causes collection resets. Timing in the one-second view
+remains practically unchanged within measurement variability.
 
-Vergleichsbasis ist der saubere Commit `c147575`. Die Änderungen bleiben zur
-Prüfung uncommittet; der vorherige Schritt ist in [RESULTS.md](RESULTS.md) dokumentiert.
+The baseline is the clean commit `c147575`. The changes remain uncommitted for
+review; the previous step is documented in [RESULTS.md](RESULTS.md).
 
-## Änderungen
+## Changes
 
-- Eine `ObservableCollection` enthält die sichtbaren Items. Beim Verlassen des
-  Viewports werden einzelne Items entfernt, beim Eintritt an ihrer Position in
-  der Modellreihenfolge eingefügt. Überlebende WPF-Container bleiben erhalten.
-  Diese Reihenfolge ist auch für deckungsgleiche Marker relevant.
-- Die stabile, dispatchergebundene CollectionView entsteht erst beim ersten
-  Zugriff der Ansicht, nicht schon beim Erzeugen des ViewModels.
-- Ein Textanker merkt sich seinen Host während seiner geladenen Lebensdauer.
-  Beim Entladen wird dessen Textlayout erneut eingeplant und die Host-Referenz
-  entfernt. So bekommt ein unverändert stehendes Label nach dem Entfernen seines
-  Nachbarn wieder die verfügbare Breite. Die Listener werden weiterhin abgemeldet.
+- An `ObservableCollection` holds visible items. Items are removed individually
+  when they leave the viewport and inserted in model order when they enter.
+  Surviving WPF containers are preserved. This order also matters for overlapping
+  markers.
+- The stable, dispatcher-bound CollectionView is created when the view first
+  accesses it, rather than when the ViewModel is constructed.
+- A text anchor remembers its host while loaded. On unload, it schedules the
+  host's text layout again and clears the host reference. This restores the
+  available width of a stationary label after its neighbor is removed.
+  Listeners are still unsubscribed.
 
-Die Sichtbarkeitsberechnung und die eigentliche Kollisionssuche bleiben unverändert.
+Visibility calculation and the collision search itself remain unchanged.
 
-## Messung
+## Measurement
 
-Vollständige WPF-Anwendung mit echtem Hauptfenster, Ribbon, Zeitskala und Item-Templates.
-Unveränderter [Messläufer](README.md), .NET 10.0.11, Rendering-Tier 2, 125 % DPI,
-16 Zeilen und 361 Items. Timeline-Viewport: 1263,6 × 593,75 DIPs.
+The full WPF application, with its actual main window, ribbon, time scale, and
+item templates. Unchanged [profiling runner](README.md), .NET 10.0.11, rendering
+tier 2, 125% DPI, 16 rows, and 361 items. Timeline viewport: 1263.6 × 593.75 DIPs.
 
-Pro Zoomstufe ein Aufwärmdurchlauf und drei Wiederholungen mit jeweils 30 horizontalen
-10-DIP-Schritten. Startpositionen und Scrollstrecken sind zwischen beiden Builds
-identisch. Der Input-Timer fordert Schritte alle 16,67 ms an; ein ausgelasteter
-Dispatcher führt sie später aus. Die Tabellen zeigen die Mediane von
-`baseline.json` und dem abschließenden `final.json`.
+Each zoom level uses one warm-up run and three repetitions of 30 horizontal
+10-DIP steps. Starting positions and scrolling distances are identical between
+builds. The input timer requests steps every 16.67 ms; a busy dispatcher executes
+them later. Tables show medians from `baseline.json` and the final `final.json`.
 
-| Zoomstufe | Gesamtzeit vorher → nachher | WPF-Frameabstand p95 vorher → nachher | UI-Allokationen vorher → nachher |
+| Zoom level | Total time before → after | WPF frame interval p95 before → after | UI allocations before → after |
 |---|---:|---:|---:|
-| 5 Minuten | 5,878 → 2,388 s | 337,96 → 64,89 ms | 541,31 → 159,27 MB |
-| 1 Minute | 1,317 → 0,889 s | 79,75 → 46,50 ms | 113,95 → 55,73 MB |
-| 1 Sekunde | 0,814 → 0,822 s | 54,15 → 54,76 ms | 17,84 → 15,75 MB |
+| 5 minutes | 5.878 → 2.388 s | 337.96 → 64.89 ms | 541.31 → 159.27 MB |
+| 1 minute | 1.317 → 0.889 s | 79.75 → 46.50 ms | 113.95 → 55.73 MB |
+| 1 second | 0.814 → 0.822 s | 54.15 → 54.76 ms | 17.84 → 15.75 MB |
 
-WPF-Frameabstände sind Abstände unterschiedlicher `CompositionTarget.Rendering`-
-Callbacks, keine GPU-Präsentationszeiten. Die p95-Spalte enthält den Median der
-drei einzeln berechneten p95-Werte. Allokationen sind kumulierte UI-Thread-Bytes
-in dezimalen MB, kein Speicherhöchststand.
+WPF frame intervals are intervals between distinct `CompositionTarget.Rendering`
+callbacks, not GPU presentation times. The p95 column contains the median of the
+three individually calculated p95 values. Allocations are cumulative UI-thread
+bytes in decimal MB, not peak memory usage.
 
-| Zoomstufe | Collection-Resets vorher → nachher | Item-Loaded vorher → nachher | LayoutUpdated-Zyklen vorher → nachher |
+| Zoom level | Collection resets before → after | Item Loaded events before → after | LayoutUpdated cycles before → after |
 |---|---:|---:|---:|
-| 5 Minuten | 67 → 0 | 1158 → 45 | 112 → 87 |
-| 1 Minute | 25 → 0 | 172 → 7 | 59 → 46 |
-| 1 Sekunde | 2 → 0 | 8 → 2 | 31 → 31 |
+| 5 minutes | 67 → 0 | 1158 → 45 | 112 → 87 |
+| 1 minute | 25 → 0 | 172 → 7 | 59 → 46 |
+| 1 second | 2 → 0 | 8 → 2 | 31 → 31 |
 
-| Zoomstufe | Prozess-CPU vorher → nachher | Textkollisionen: Callback-Zeit vorher → nachher |
+| Zoom level | Process CPU before → after | Text collisions: callback time before → after |
 |---|---:|---:|
-| 5 Minuten | 6,641 → 3,797 s | 471,77 → 671,93 ms |
-| 1 Minute | 1,438 → 1,234 s | 168,08 → 146,69 ms |
-| 1 Sekunde | 0,266 → 0,250 s | 22,88 → 20,45 ms |
+| 5 minutes | 6.641 → 3.797 s | 471.77 → 671.93 ms |
+| 1 minute | 1.438 → 1.234 s | 168.08 → 146.69 ms |
+| 1 second | 0.266 → 0.250 s | 22.88 → 20.45 ms |
 
-Die dichte Ansicht spart vor allem den Neuaufbau von Templates. Ihre gemessene
-Kollisionszeit steigt trotz gleichbleibender Callback-Anzahl; dieser Schritt
-beschleunigt die Kollisionssuche selbst also nicht. Die Ursache des höheren
-Einzelaufwands wurde hier nicht isoliert.
+The dense view mainly benefits from avoiding template reconstruction. Its measured
+collision time increases despite an unchanged callback count, so this step does
+not accelerate the collision search itself. The cause of the higher cost per
+callback was not isolated here.
 
-Die Gesamtzeit streut bei 5 Minuten von 5,50–6,00 s vorher und 2,23–2,43 s nachher.
-Bei 1 Minute liegen die Bereiche bei 1,24–1,35 s und 0,856–0,917 s. In der
-Sekundenansicht überlappen sie: 0,773–0,874 s und 0,810–0,861 s.
+At 5 minutes, total time ranges from 5.50–6.00 s before and 2.23–2.43 s after.
+At 1 minute, the ranges are 1.24–1.35 s and 0.856–0.917 s. In the one-second
+view, they overlap: 0.773–0.874 s and 0.810–0.861 s.
 
-Ein zusätzlicher Baseline-Prozess und weitere Prozesse des Zwischenstands dienten
-der Kontrolle zunächst leicht höherer CPU-/Framewerte in der Sekundenansicht.
-Sie bestätigen dort keinen klaren Laufzeitgewinn. Für diese Ansicht wird weder
-eine Beschleunigung noch eine relevante Verschlechterung aus den kleinen
-Zeitunterschieden abgeleitet.
+An additional baseline process and further intermediate-version processes were
+used to investigate initially slightly higher CPU/frame values in the one-second
+view. They do not confirm a clear timing improvement there. Neither a speedup
+nor a meaningful regression is inferred from the small timing differences in
+this view.
 
-## Regressionen
+## Regression testing
 
-- 168 Tests erfolgreich. Der bisherige Grenzübertrittstest prüft nun gezielte
-  Add-/Remove-Ereignisse und den Erhalt der übrigen WPF-Container in beiden
-  Scrollrichtungen.
-- Zusätzliche Prüfungen für Modellreihenfolge, deckungsgleiche Startzeiten,
-  Zoom, Größenänderung, kompaktes Raster, Bearbeitung, Löschen und Undo/Redo.
-- Der neue Test für das Entfernen eines Textnachbarn scheiterte vor der
-  Host-Aktualisierung und besteht mit ihr. Bestehende GC- und Wiederanmeldetests
-  für entladene Anker bestehen ebenfalls.
-- 15 reale WPF-Zustände mit insgesamt 4627 Anker-, Hindernis- und Textfeld-Geometrien
-  stimmen mit der Basis überein: Sichtbarkeit, Position und Breite auf 0,001 DIP,
-  einschließlich Rückwärtsscrollen. Dies ist kein Pixelvergleich.
+- 168 tests passed. The existing viewport boundary-crossing test now checks
+  targeted Add/Remove events and preservation of the other WPF containers in
+  both scroll directions.
+- Additional checks cover model order, identical start times, zoom, resizing,
+  compact grid, editing, deletion, and undo/redo.
+- The new test for removing a neighboring text item failed before the host
+  update and passes with it. Existing GC and resubscription tests for unloaded
+  anchors also pass.
+- 15 actual WPF states with a total of 4627 anchor, obstacle, and text box
+  geometries match the baseline: visibility, position, and width to 0.001 DIP,
+  including backward scrolling. This is not a pixel comparison.
 
-## Verbleibendes Potenzial
+## Remaining potential
 
-Die dichteste Ansicht erreicht weiterhin keine gleichmäßigen 60 Hz. Nachdem die
-Zeilen-Resets entfallen, hat die Textkollisionserkennung relativ mehr Gewicht.
-Ein weiterer Schritt sollte deshalb ihren Aufwand einschließlich der wiederholten
-natürlichen Textbreitenmessung isoliert untersuchen. Eine andere Suchstruktur
-oder ein Textbreiten-Cache wurde in diesem Schritt nicht eingeführt.
+The densest view still does not achieve a steady 60 Hz. With row resets eliminated,
+text collision detection accounts for a larger share of the work. A further step
+should therefore isolate its cost, including repeated natural text width
+measurement. Neither a different search structure nor a text width cache was
+introduced in this step.
 
-## Rohdaten
+## Raw data
 
-Lokale, ignorierte Artefakte unter `artifacts/incremental-scroll`:
+Local, ignored artifacts under `artifacts/incremental-scroll`:
 
-- `baseline.json`, `final.json`: Hauptvergleich, Einzelmessungen und Frameabstände.
-- `baseline-repeat.json`: zusätzlicher Baseline-Prozess.
-- `candidate.json`, `candidate-repeat.json`: Messungen vor der verzögerten
-  CollectionView-Erzeugung.
-- `geometry-baseline.json`, `geometry-final.json`: vollständiger Geometrievergleich.
-- `regression.log`: abschließende Regressionssuite.
+- `baseline.json`, `final.json`: main comparison, individual measurements, and frame intervals.
+- `baseline-repeat.json`: additional baseline process.
+- `candidate.json`, `candidate-repeat.json`: measurements before deferred
+  CollectionView creation.
+- `geometry-baseline.json`, `geometry-final.json`: complete geometry comparison.
+- `regression.log`: final regression suite.
 
-Die JSON-Metadaten enthalten die SHA-256-Hashes der gemessenen Profiling-Builds.
+The JSON metadata includes the SHA-256 hashes of the measured profiling builds.

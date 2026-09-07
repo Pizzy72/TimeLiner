@@ -1,97 +1,96 @@
-# Textbreiten-Cache nach 04a63d2
+# Text width cache after 04a63d2
 
-## Entscheidung
+## Decision
 
-Der begrenzte Cache bleibt erhalten: Er reduziert die wiederholte Textmessung,
-CPU-Zeit und Allokationen deutlich. Die dichte Scrollstrecke wird im Standardlauf
-um 15,3 % kürzer. Eine Verbesserung der p95-Frameabstände ist dagegen **nicht
-durchgehend nachgewiesen**. Weitere Umbauten an Kollisionssuche oder Layout wurden
-in diesem Schritt nicht vorgenommen. Die Änderungen sind zunächst uncommittet.
+The bounded cache is retained: it substantially reduces repeated text measurement,
+CPU time, and allocations. The dense scrolling sequence takes 15.3% less time in
+the standard run. An improvement in p95 frame intervals, however, is **not
+consistently demonstrated**. No further changes to collision search or layout
+were made in this step. The changes remain uncommitted for now.
 
-## Änderung und Absicherung
+## Change and validation
 
-Jeder TextBlock hält höchstens seine letzte natürliche Textbreite. Vor einer
-Wiederverwendung werden Text, Schriftfamilie, Schriftstil, Gewicht, Streckung,
-Schriftgröße, Schreibrichtung, DPI und die aktuelle UI-Kultur verglichen.
-Bei veränderlichen Kulturinformationen und anonymen zusammengesetzten
-Schriftfamilien wird die Messung nicht wiederverwendet. Es gibt keine globale
-Sammlung von Labeltexten oder TextBlock-Referenzen.
+Each TextBlock stores at most its last natural text width. Before reusing it,
+the cache checks the text, font family, style, weight, stretch, size, flow direction,
+DPI, and current UI culture. Measurements are not reused for mutable culture
+information or anonymous composite font families. There is no global collection
+of label text or TextBlock references.
 
-180 Regressionstests bestehen. Neue Tests vergleichen ein bereits gemessenes
-Textfeld nach Änderungen seiner Eingaben mit einem frischen Textfeld, einschließlich
-Kultur- und DPI-Wechseln. Ein GC-Test prüft die Freigabe eines Textfeldes mit Cache.
-15 reale WPF-Layoutzustände mit 4627 Elementgeometrien stimmen mit der Baseline
-überein, einschließlich Rückwärtsscrollen. Dies ist kein Pixelvergleich.
+180 regression tests pass. New tests compare a previously measured text box after
+changes to its inputs with a fresh text box, including culture and DPI changes.
+A GC test checks that a text box with a cache can be collected.
+15 actual WPF layout states with 4627 element geometries match the baseline,
+including backward scrolling. This is not a pixel comparison.
 
-## Messverfahren
+## Measurement method
 
-Grundlage ist `04a63d2`, ergänzt ausschließlich um Profiling-Zähler. Beide Builds
-enthalten dieselben Zähler für Breitenabfragen, echte FormattedText-Messungen und
-deren Dauer. Sie sind durch `SCROLL_PROFILE` begrenzt und fehlen im normalen Build.
-Der Messläufer liest sie außerhalb des gemessenen Intervalls; ältere Quellstände
-ohne Zähler bleiben unterstützt und melden dafür `null`.
+The baseline is `04a63d2`, with only profiling counters added. Both builds contain
+the same counters for width queries, actual FormattedText measurements, and their
+duration. They are guarded by `SCROLL_PROFILE` and absent from normal builds.
+The runner reads them outside the measured interval; older source versions
+without counters remain supported and report `null` for them.
 
-Unveränderter [WPF-Messaufbau](README.md): vollständiges Hauptfenster, 16 Zeilen,
-361 Items, drei Zoomstufen, je ein Aufwärmdurchlauf und drei Wiederholungen mit
-30 Schritten zu 10 DIPs. .NET 10.0.11, 125 % DPI, Rendering-Tier 2.
-Alle Tabellenwerte sind Mediane der drei Wiederholungen.
+Unchanged [WPF measurement setup](README.md): complete main window, 16 rows,
+361 items, three zoom levels, one warm-up run and three repetitions per level,
+with 30 steps of 10 DIPs each. .NET 10.0.11, 125% DPI, rendering tier 2.
+All table values are medians of the three repetitions.
 
-## Standardlauf
+## Standard run
 
-| Zoom | Gesamtzeit vorher → nachher | Prozess-CPU vorher → nachher | UI-Allokationen vorher → nachher |
+| Zoom | Total time before → after | Process CPU before → after | UI allocations before → after |
 |---|---:|---:|---:|
-| 5 Minuten | 2,304 → 1,950 s | 3,719 → 3,000 s | 158,45 → 135,78 MB |
-| 1 Minute | 0,895 → 0,841 s | 1,281 → 1,172 s | 55,76 → 48,45 MB |
-| 1 Sekunde | 0,816 → 0,872 s | 0,234 → 0,359 s | 15,74 → 15,05 MB |
+| 5 minutes | 2.304 → 1.950 s | 3.719 → 3.000 s | 158.45 → 135.78 MB |
+| 1 minute | 0.895 → 0.841 s | 1.281 → 1.172 s | 55.76 → 48.45 MB |
+| 1 second | 0.816 → 0.872 s | 0.234 → 0.359 s | 15.74 → 15.05 MB |
 
-| Zoom | Echte Textmessungen vorher → nachher | Textmesszeit vorher → nachher | Kollisions-Callback-Zeit vorher → nachher |
+| Zoom | Actual text measurements before → after | Text measurement time before → after | Collision callback time before → after |
 |---|---:|---:|---:|
-| 5 Minuten | 6108 → 29 | 429,75 → 5,29 ms | 648,51 → 208,25 ms |
-| 1 Minute | 1903 → 2 | 110,00 → 0,58 ms | 160,66 → 32,35 ms |
-| 1 Sekunde | 168 → 0 | 11,58 → 0,00 ms | 17,39 → 8,67 ms |
+| 5 minutes | 6108 → 29 | 429.75 → 5.29 ms | 648.51 → 208.25 ms |
+| 1 minute | 1903 → 2 | 110.00 → 0.58 ms | 160.66 → 32.35 ms |
+| 1 second | 168 → 0 | 11.58 → 0.00 ms | 17.39 → 8.67 ms |
 
-Die Zahl der Breitenabfragen bleibt gleich. Der Cache vermeidet den teuren Teil
-der Abfrage. Die Textmesszeit umfasst FormattedText-Konstruktion und Ermittlung der
-natürlichen Breite, nicht die Prüfung des Cache-Schlüssels.
+The number of width queries remains unchanged. The cache avoids the expensive
+part of each query. Text measurement time includes FormattedText construction
+and calculation of the natural width, but excludes checking the cache key.
 
-| Zoom | WPF-Frameabstand p95 vorher → nachher | LayoutUpdated-Zyklen vorher → nachher |
+| Zoom | WPF frame interval p95 before → after | LayoutUpdated cycles before → after |
 |---|---:|---:|
-| 5 Minuten | 63,18 → 75,36 ms | 87 → 87 |
-| 1 Minute | 39,46 → 43,12 ms | 46 → 46 |
-| 1 Sekunde | 53,88 → 58,62 ms | 31 → 31 |
+| 5 minutes | 63.18 → 75.36 ms | 87 → 87 |
+| 1 minute | 39.46 → 43.12 ms | 46 → 46 |
+| 1 second | 53.88 → 58.62 ms | 31 → 31 |
 
-Die p95-Werte fallen im Standardlauf höher aus. Weniger Arbeit bedeutet hier
-also nicht automatisch bessere Frame-Spitzen. Bei 5 Minuten sinkt zugleich die
-Anzahl der Frameabstände über 25 ms von 36 auf 31 pro Strecke. Anzahl und Verteilung
-der Rendering-Callbacks ändern sich mit der Laufzeit; die Kennzahlen beschreiben
-unterschiedliche Aspekte und dürfen nicht gegeneinander ausgetauscht werden.
+The p95 values are higher in the standard run. Less work therefore does not
+automatically improve frame spikes here. At 5 minutes, the number of frame
+intervals exceeding 25 ms also falls from 36 to 31 per sequence. The number and
+distribution of rendering callbacks change with the run duration; these metrics
+describe different aspects and must not be treated as interchangeable.
 
-## Kontrolllauf ohne gestufte JIT-Kompilierung
+## Control run without tiered JIT compilation
 
-Wegen der gemischten Framewerte wurden beide Varianten zusätzlich mit
-`DOTNET_TieredCompilation=0` ausgeführt. Diese Einstellung galt ausschließlich für
-die jeweiligen Messprozesse und ändert die normalen Anwendungseinstellungen nicht.
-Sie ist ein diagnostischer Vergleich, kein Ersatz für den Standardlauf.
+Because the frame results were mixed, both variants were also run with
+`DOTNET_TieredCompilation=0`. This setting applied only to the respective
+measurement processes and does not change normal application settings.
+It provides a diagnostic comparison, not a replacement for the standard run.
 
-| Zoom | Gesamtzeit vorher → nachher | WPF-Frameabstand p95 vorher → nachher |
+| Zoom | Total time before → after | WPF frame interval p95 before → after |
 |---|---:|---:|
-| 5 Minuten | 2,913 → 2,270 s | 91,57 → 82,84 ms |
-| 1 Minute | 1,150 → 0,959 s | 47,87 → 48,17 ms |
-| 1 Sekunde | 0,933 → 0,875 s | 55,02 → 49,68 ms |
+| 5 minutes | 2.913 → 2.270 s | 91.57 → 82.84 ms |
+| 1 minute | 1.150 → 0.959 s | 47.87 → 48.17 ms |
+| 1 second | 0.933 → 0.875 s | 55.02 → 49.68 ms |
 
-Bei 5 Minuten sinkt die Prozess-CPU hier von 3,203 auf 2,672 s und die
-Kollisionszeit von 704,18 auf 171,10 ms. Die Einsparung an Rechenarbeit ist damit
-reproduzierbar. Die Unterschiede zwischen Standard- und Kontrolllauf erlauben
-keine eindeutige Zuschreibung der Frame-Schwankungen an die JIT-Kompilierung.
-Für die schwach belastete Sekundenansicht wird kein verlässlicher Zeitgewinn behauptet.
+At 5 minutes, process CPU time falls from 3.203 to 2.672 s and collision time
+from 704.18 to 171.10 ms in this run. The reduction in computational work is
+therefore reproducible. Differences between the standard and control runs do
+not allow frame variability to be attributed conclusively to JIT compilation.
+No reliable timing improvement is claimed for the lightly loaded one-second view.
 
-Frameabstände stammen von `CompositionTarget.Rendering`, nicht von GPU-Präsentationen.
-p95 ist jeweils der Median der drei einzelnen p95-Werte. MB sind dezimale,
-kumulierte Allokationen des UI-Threads, kein gleichzeitig belegter Speicher.
+Frame intervals come from `CompositionTarget.Rendering`, not GPU presentations.
+Each p95 is the median of three individual p95 values. MB denotes decimal,
+cumulative UI-thread allocations, not memory held simultaneously.
 
-## Rohdaten
+## Raw data
 
-Im ignorierten Verzeichnis `artifacts/text-width` liegen `baseline.json`,
-`final.json`, `baseline-controlled.json`, `final-controlled.json`, der erste
-Cache-Probelauf `candidate.json`, `geometry-baseline.json`, `geometry-final.json`
-und `regression.log`. Die JSON-Metadaten enthalten die Hashes der Profiling-Builds.
+The ignored directory `artifacts/text-width` contains `baseline.json`,
+`final.json`, `baseline-controlled.json`, `final-controlled.json`, the initial
+cache trial `candidate.json`, `geometry-baseline.json`, `geometry-final.json`,
+and `regression.log`. The JSON metadata includes the profiling build hashes.
