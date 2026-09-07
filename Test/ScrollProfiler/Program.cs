@@ -153,6 +153,9 @@ internal static class Program
         Console.WriteLine($"Starting {scale}, run {run}");
         int layouts = 0, resets = 0, collisionCalls = 0, step = 0;
         int loadsBefore = ItemLoads;
+        long? widthCallsBefore = ReadTextWidthCounter("TextWidthCalls");
+        long? widthMeasurementsBefore = ReadTextWidthCounter("TextWidthMeasurements");
+        long? widthTicksBefore = ReadTextWidthCounter("TextWidthTicks");
         long collisionTicks = 0, lastFrame = 0;
         double setterMs = 0;
         List<double> frames = new(steps);
@@ -238,11 +241,18 @@ internal static class Program
             FramesOver25Ms = frames.Count(x => x > 25), LayoutCycles = layouts, CollectionResets = resets,
             ItemLoads = ItemLoads - loadsBefore, ScrollSetterMs = setterMs, CollisionCalls = collisionCalls,
             CollisionMs = collisionTicks * 1000d / Stopwatch.Frequency,
+            TextWidthCalls = ReadTextWidthCounter("TextWidthCalls") - widthCallsBefore,
+            TextWidthMeasurements = ReadTextWidthCounter("TextWidthMeasurements") - widthMeasurementsBefore,
+            TextWidthMs = (ReadTextWidthCounter("TextWidthTicks") - widthTicksBefore) * 1000d / Stopwatch.Frequency,
             FrameIntervalsMs = frames
         };
     }
 
     private static double Percentile(double[] values, double percentile) => values[(int)Math.Ceiling(percentile * values.Length) - 1];
+
+    // Read outside the measured interval; older baselines without probes report null.
+    private static long? ReadTextWidthCounter(string name) =>
+        (long?)typeof(TimelineItemTextBehavior).GetField(name, BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null);
 
     private static async Task VerifyGeometry(MainWindow window, TimeLinesViewModel model)
     {

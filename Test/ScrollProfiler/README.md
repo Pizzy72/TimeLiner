@@ -6,7 +6,9 @@ Er gehört nicht zum normalen Build oder zur automatischen Testsuite.
 
 ## Aufbau
 
-`ScrollProfiler.targets` ergänzt ausschließlich einen Messstartpunkt. Der Anwendungscode
+`ScrollProfiler.targets` ergänzt einen Messstartpunkt und aktiviert `SCROLL_PROFILE`.
+Damit werden zusätzliche Zähler für natürliche Textbreitenmessungen kompiliert;
+im normalen Anwendungsbuild sind diese Zähler und Zeitmessungen nicht enthalten. Der Anwendungscode
 und sämtliche WPF-Ressourcen werden aus dem jeweils untersuchten Stand kompiliert.
 Benutzereinstellungen werden beim Start durch Standardwerte und eine Speicherung im
 Arbeitsspeicher ersetzt. Die Eingabedatei wird ausschließlich gelesen; ihr Name und
@@ -24,6 +26,12 @@ Item-Loaded-Ereignisse, globale WPF-LayoutUpdated-Ereignisse und die Laufzeit de
 Dispatcher-Callbacks von `TimelineItemTextBehavior`. Die Zuordnung der Callbacks
 verwendet das private WPF-Feld `DispatcherOperation._method` und prüft dessen
 Vorhandensein beim Start. Ein Runtime-Wechsel kann eine Anpassung erfordern.
+
+`TextWidthCalls` zählt Breitenabfragen, `TextWidthMeasurements` tatsächlich erzeugte
+`FormattedText`-Messungen. `TextWidthMs` erfasst deren Konstruktion und Breitenberechnung,
+ohne Cache-Abfragen. Ältere Quellstände ohne diese optionalen Zähler melden dafür
+`null`. Für einen direkten Vergleich ihrer Anteile müssen beide Stände dieselben
+Profiling-Probes enthalten. Die Zählerstände werden außerhalb des Messintervalls gelesen.
 
 Framezeiten sind Abstände verschiedener `CompositionTarget.Rendering`-Callbacks.
 Sie messen den WPF-UI-Takt, **keine GPU-Präsentationszeiten**. LayoutUpdated-Zähler
