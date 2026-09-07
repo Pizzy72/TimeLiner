@@ -16,6 +16,30 @@ namespace TimeLinerTest
     public class TestTimelineItemTextBehavior
     {
         [STATestMethod]
+        public void RemovingNeighbour_RestoresStationaryLabelWidth()
+        {
+            Canvas host = new() { Width = 800, Height = 40 };
+            TimelineItemTextBehavior.SetIsTimelineHost(host, true);
+            var first = AddItem(host, 60, 4);
+            var next = AddItem(host, 80, 4);
+            Window window = new()
+            {
+                Content = host, Width = 820, Height = 80,
+                ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+            };
+            try
+            {
+                window.Show();
+                FlushLayout(window);
+                Assert.AreEqual(14d, first.Text.Width);
+                host.Children.Remove(next.Anchor);
+                FlushLayout(window);
+                Assert.IsTrue(double.IsNaN(first.Text.Width), "Removing an obstacle must update surviving labels even if their anchors did not move.");
+            }
+            finally { window.Close(); }
+        }
+
+        [STATestMethod]
         public void UnloadedAnchor_DoesNotRemainRootedByPositionListener()
         {
             Canvas host = new() { Width = 800, Height = 40 };

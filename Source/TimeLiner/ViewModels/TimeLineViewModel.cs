@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Data;
@@ -26,7 +27,8 @@ namespace TimeLiner.ViewModels
         /// <see cref="TimeLineItemCollectionView"/>
         private List<TimeLineItemViewModel> _timeLineItems = [];
 
-        private readonly ICollectionView _timeLineItemCollectionView;
+        private ICollectionView _timeLineItemCollectionView;
+        private readonly ObservableCollection<TimeLineItemViewModel> _visibleItems = [];
 
         private HashSet<TimeLineItemViewModel> _visibleTimeLineItems;
 
@@ -121,9 +123,6 @@ namespace TimeLiner.ViewModels
                 _timeLineItems.Add(item);
             }
 
-            _timeLineItemCollectionView = CollectionViewSource.GetDefaultView(_timeLineItems);
-            _timeLineItemCollectionView.Filter = o =>
-                _visibleTimeLineItems?.Contains((TimeLineItemViewModel)o) == true;
         }
 
         /// <summary>
@@ -217,7 +216,9 @@ namespace TimeLiner.ViewModels
             get
             {
                 EnsureVisibleTimeLineItems();
-                return _timeLineItemCollectionView;
+                // Create the dispatcher-bound view on first use by the UI,
+                // rather than while the model is being loaded.
+                return _timeLineItemCollectionView ??= CollectionViewSource.GetDefaultView(_visibleItems);
             }
         }
 
@@ -321,7 +322,7 @@ namespace TimeLiner.ViewModels
             if (_visibleTimeLineItems == null)
             {
                 _visibleTimeLineItems = CalculateVisibleTimeLineItems();
-                _timeLineItemCollectionView.Refresh();
+                SynchronizeVisibleItems(_visibleTimeLineItems);
             }
         }
 
@@ -344,10 +345,30 @@ namespace TimeLiner.ViewModels
             foreach (TimeLineItemViewModel item in changedItems)
                 item.RefreshViewportGeometry();
 
-            // Scrolling usually moves the same items. A reset recreates their WPF
-            // templates and repeats Loaded/layout/text-collision work unnecessarily.
+            // Preserve the containers of surviving items even when a neighbour
+            // enters or leaves the viewport.
             if (oldVisibleItems == null || !oldVisibleItems.SetEquals(newVisibleItems))
-                _timeLineItemCollectionView.Refresh();
+                SynchronizeVisibleItems(newVisibleItems);
+        }
+
+        private void SynchronizeVisibleItems(HashSet<TimeLineItemViewModel> visibleItems)
+        {
+            for (int i = _visibleItems.Count - 1; i >= 0; i--)
+                if (!visibleItems.Contains(_visibleItems[i]))
+                    _visibleItems.RemoveAt(i);
+
+            // Model order determines the visual order of coincident markers.
+            // Surviving items retain their relative order; only insert missing ones.
+            int index = 0;
+            foreach (TimeLineItemViewModel item in _timeLineItems)
+            {
+                if (!visibleItems.Contains(item))
+                    continue;
+
+                if (index == _visibleItems.Count || !ReferenceEquals(_visibleItems[index], item))
+                    _visibleItems.Insert(index, item);
+                index++;
+            }
         }
 
         /// <summary>

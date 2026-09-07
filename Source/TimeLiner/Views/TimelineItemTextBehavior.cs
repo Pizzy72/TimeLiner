@@ -109,6 +109,11 @@ namespace TimeLiner.Views
                 "UpdatePending", typeof(bool), typeof(TimelineItemTextBehavior),
                 new PropertyMetadata(false));
 
+        private static readonly DependencyProperty AnchorHostProperty =
+            DependencyProperty.RegisterAttached(
+                "AnchorHost", typeof(FrameworkElement), typeof(TimelineItemTextBehavior),
+                new PropertyMetadata(null));
+
         private static void OnIsTextAnchorChanged(
             DependencyObject d,
             DependencyPropertyChangedEventArgs e)
@@ -116,7 +121,7 @@ namespace TimeLiner.Views
             if (d is not FrameworkElement anchor)
                 return;
 
-            CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
+            OnTextAnchorUnloaded(anchor, null);
             anchor.Loaded -= OnTextAnchorLoaded;
             anchor.Unloaded -= OnTextAnchorUnloaded;
 
@@ -134,6 +139,7 @@ namespace TimeLiner.Views
             FrameworkElement anchor = (FrameworkElement)sender;
             CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
             CanvasLeftDescriptor.AddValueChanged(anchor, OnTextAnchorLeftChanged);
+            anchor.SetValue(AnchorHostProperty, FindTimelineHost(anchor));
             OnTextAnchorLeftChanged(anchor, EventArgs.Empty);
         }
 
@@ -141,7 +147,16 @@ namespace TimeLiner.Views
         {
             // Property descriptors retain their source strongly. A collection reset
             // must not keep detached item templates and their bindings alive.
-            CanvasLeftDescriptor.RemoveValueChanged((FrameworkElement)sender, OnTextAnchorLeftChanged);
+            FrameworkElement anchor = (FrameworkElement)sender;
+            CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
+            FrameworkElement host = (FrameworkElement)anchor.GetValue(AnchorHostProperty);
+            anchor.ClearValue(AnchorHostProperty);
+
+            // Incremental removal does not reload the remaining labels. Their
+            // previous neighbour may disappear without moving any other anchor.
+            // Remember the host while loaded: the visual parent is gone by now.
+            if (host != null)
+                ScheduleHostUpdate(host);
         }
 
         private static void OnTextAnchorLeftChanged(object sender, EventArgs e)
