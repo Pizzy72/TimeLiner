@@ -1,0 +1,6 @@
+<Project>
+  <!-- Opt-in entry point: all application code and WPF resources are compiled normally. -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Program.cs" />
+  </ItemGroup>
+</Project>

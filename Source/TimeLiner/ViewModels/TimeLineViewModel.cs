@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using System;
@@ -73,12 +73,18 @@ namespace TimeLiner.ViewModels
         /// <summary>
         /// The model of the associated timeline.
         /// </summary>
-        public TimeLineModel TimeLineModel { get; }
+        public TimeLineModel TimeLineModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The main view model.
         /// </summary>
-        public TimeLinesViewModel TimeLinesViewModel { get; }
+        public TimeLinesViewModel TimeLinesViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view models of the timeline items of this timeline.
@@ -94,9 +100,9 @@ namespace TimeLiner.ViewModels
         /// Constructor.
         /// </summary>
         public TimeLineViewModel(
-            TimeLinesViewModel timeLinesViewModel, 
-            TimeLineModel timeLineModel, 
-            SettingsViewModel settingsViewModel, 
+            TimeLinesViewModel timeLinesViewModel,
+            TimeLineModel timeLineModel,
+            SettingsViewModel settingsViewModel,
             TimeLineScalingViewModel timeLineScaling
             )
         {
@@ -338,7 +344,10 @@ namespace TimeLiner.ViewModels
             foreach (TimeLineItemViewModel item in changedItems)
                 item.RefreshViewportGeometry();
 
-            _timeLineItemCollectionView.Refresh();
+            // Scrolling usually moves the same items. A reset recreates their WPF
+            // templates and repeats Loaded/layout/text-collision work unnecessarily.
+            if (oldVisibleItems == null || !oldVisibleItems.SetEquals(newVisibleItems))
+                _timeLineItemCollectionView.Refresh();
         }
 
         /// <summary>

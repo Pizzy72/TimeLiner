@@ -4,6 +4,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -27,6 +28,82 @@ namespace TimeLinerTest
     [TestClass]
     public class TestScrollPerformance
     {
+        [STATestMethod]
+        public void HorizontalScroll_UnchangedMembership_PreservesContainersAndUpdatesGeometry()
+        {
+            SettingsViewModel settings = new(new SettingsRepositoryStub(new SettingsModel()));
+            TimeLinesViewModel model = new(new DialogServiceStub(), settings, new(settings));
+            model.TimeLinesVisibleHeight = 30;
+            RunOnDispatcher(() => model.LoadAsync(@"TestData\VisibleTimeLineItems.csv", 500));
+            model.Scale = ScaleIndex.OneMinute;
+            TimeLineViewModel row = model.TimeLines[0];
+            ICollectionView view = row.TimeLineItemCollectionView;
+            TimeLineItemViewModel item = row.TimeLineItems[0];
+            ItemsControl items = new()
+            {
+                ItemsSource = view
+            };
+            Window window = new()
+            {
+                Content = items,
+                Width = 520,
+                Height = 100,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                Left = -10000,
+                Top = -10000
+            };
+            int resets = 0;
+            view.CollectionChanged += (_, e) => { if (e.Action == NotifyCollectionChangedAction.Reset) resets++; };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                object container = items.ItemContainerGenerator.ContainerFromItem(item);
+                Assert.IsNotNull(container);
+                Border boundVisual = new()
+                {
+                    DataContext = item
+                };
+                boundVisual.SetBinding(Canvas.LeftProperty, new Binding(nameof(item.Left)));
+                double oldLeft = Canvas.GetLeft(boundVisual);
+                TimeLineItemViewModel[] before = view.Cast<TimeLineItemViewModel>().ToArray();
+
+                model.HorizontalScrollOffset = 10;
+                window.UpdateLayout();
+
+                CollectionAssert.AreEqual(before, view.Cast<TimeLineItemViewModel>().ToArray());
+                Assert.AreEqual(0, resets, "Unchanged membership must not rebuild item containers.");
+                Assert.AreSame(container, items.ItemContainerGenerator.ContainerFromItem(item));
+                Assert.AreEqual(oldLeft - 10, Canvas.GetLeft(boundVisual));
+                Assert.AreEqual(item.Left, Canvas.GetLeft(boundVisual));
+            }
+            finally { window.Close(); }
+        }
+
+        [STATestMethod]
+        public void HorizontalScroll_MembershipChanges_RefreshesInBothDirections()
+        {
+            SettingsViewModel settings = new(new SettingsRepositoryStub(new SettingsModel()));
+            TimeLinesViewModel model = new(new DialogServiceStub(), settings, new(settings));
+            model.TimeLinesVisibleHeight = 30;
+            RunOnDispatcher(() => model.LoadAsync(@"TestData\VisibleTimeLineItems.csv", 200));
+            model.Scale = ScaleIndex.OneMinute;
+            TimeLineViewModel row = model.TimeLines[0];
+            ICollectionView view = row.TimeLineItemCollectionView;
+            int resets = 0;
+            view.CollectionChanged += (_, e) => { if (e.Action == NotifyCollectionChangedAction.Reset) resets++; };
+            foreach (double offset in new double[] { 10, 100, 250, 300, 0 })
+            {
+                TimeLineItemViewModel[] before = view.Cast<TimeLineItemViewModel>().ToArray();
+                int previousResets = resets;
+                model.HorizontalScrollOffset = offset;
+                TimeLineItemViewModel[] expected = row.TimeLineItems.Where(item => item.IsInHorizontalViewport).ToArray();
+                CollectionAssert.AreEqual(expected, view.Cast<TimeLineItemViewModel>().ToArray());
+                Assert.AreEqual(before.SequenceEqual(expected) ? 0 : 1, resets - previousResets);
+            }
+        }
+
         [STATestMethod]
         public void HiddenRow_ReenteringViewport_RefreshesExistingBindings()
         {

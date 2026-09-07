@@ -117,9 +117,31 @@ namespace TimeLiner.Views
                 return;
 
             CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
+            anchor.Loaded -= OnTextAnchorLoaded;
+            anchor.Unloaded -= OnTextAnchorUnloaded;
 
             if ((bool)e.NewValue)
-                CanvasLeftDescriptor.AddValueChanged(anchor, OnTextAnchorLeftChanged);
+            {
+                anchor.Loaded += OnTextAnchorLoaded;
+                anchor.Unloaded += OnTextAnchorUnloaded;
+                if (anchor.IsLoaded)
+                    OnTextAnchorLoaded(anchor, null);
+            }
+        }
+
+        private static void OnTextAnchorLoaded(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement anchor = (FrameworkElement)sender;
+            CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
+            CanvasLeftDescriptor.AddValueChanged(anchor, OnTextAnchorLeftChanged);
+            OnTextAnchorLeftChanged(anchor, EventArgs.Empty);
+        }
+
+        private static void OnTextAnchorUnloaded(object sender, RoutedEventArgs e)
+        {
+            // Property descriptors retain their source strongly. A collection reset
+            // must not keep detached item templates and their bindings alive.
+            CanvasLeftDescriptor.RemoveValueChanged((FrameworkElement)sender, OnTextAnchorLeftChanged);
         }
 
         private static void OnTextAnchorLeftChanged(object sender, EventArgs e)
