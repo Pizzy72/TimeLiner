@@ -4,6 +4,12 @@ All notable changes to TimeLiner are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.15.4] - 2026-09-08
+
+### Changed
+
+- Improved horizontal scrolling performance, especially in dense timelines.
+
 ## [2.15.3] - 2026-09-06
 
 ### Fixed
