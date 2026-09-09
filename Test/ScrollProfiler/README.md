@@ -40,6 +40,54 @@ do not count individual Measure/Arrange calls. Allocations are cumulative bytes,
 not peak memory usage. Run measurements sequentially; do not run builds, tests,
 or UI automation concurrently with them.
 
+## Detailed frame diagnostics
+
+Set `TIMELINER_PROFILE_FRAMES=1` to record dispatcher operation start/end times,
+callback names, priorities, nesting depths, scroll setter spans, and cumulative
+counters at each distinct rendering callback. The optional `Trace` property is
+`null` in ordinary runs. The normal application build is unaffected.
+
+After building the profiler as described below:
+
+```powershell
+$env:TIMELINER_PROFILE_FRAMES = '1'
+$env:TIMELINER_PROFILE_OUTPUT = Join-Path $root 'artifacts/scroll-profile/frames.json'
+dotnet artifacts/scroll-profile/app-current/TimeLiner.dll
+Remove-Item Env:TIMELINER_PROFILE_FRAMES
+& Test/ScrollProfiler/Analyze-Frames.ps1 `
+  -InputPath artifacts/scroll-profile/frames.json `
+  -OutputPath artifacts/scroll-profile/frames.csv
+```
+
+The analyzer clips dispatcher spans to each rendering interval and counts only
+outermost operations to avoid counting nested dispatcher work twice. Operations
+still active when observation stops are included up to that cutoff and counted
+in `TruncatedOperations`. The initial time before the first rendering callback
+is excluded from interval analysis. Callback boundaries can split one operation
+across two intervals; `RenderOperations` counts overlapping spans, not frames.
+
+`RenderMs` includes WPF layout, event handling, rendering preparation, and any
+pauses inside MediaContext render callbacks. It is not pure drawing or GPU time.
+`TimerMs` includes all DispatcherTimer callbacks; `ScrollSetterMs` separately
+records the scroll setter and is a subset, not an additional cost.
+`TextLayoutMs` measures the application's text LayoutUpdated handler and is also
+already included in the dispatcher spans. Its counters are compiled only under
+`SCROLL_PROFILE`; older sources without them report `null`.
+
+GC generation counts and `GC.GetTotalPauseDuration()` are sampled cumulatively
+at frame boundaries. Their deltas show collections and reported process-wide
+pauses between samples, not exact GC start/end timestamps. GC time may already
+be included in a dispatcher span and must not be added to it. `UnattributedMs`
+is time outside observed dispatcher operations; it can include waiting,
+scheduling, native message handling, or instrumentation overhead, and is not
+automatically idle time or GPU work.
+
+Detailed tracing adds observation overhead and allocations. Compare runs of
+the same build with tracing enabled and disabled, and repeat suspicious results.
+This trace localizes long intervals but does not replace a CPU stack trace for
+distinguishing work inside a WPF render callback. Results from the initial
+investigation are documented in [LONG-FRAME-RESULTS.md](LONG-FRAME-RESULTS.md).
+
 ## Running
 
 Use PowerShell in the repository directory. `TIMELINER_BENCHMARK_FILE` must point

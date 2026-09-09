@@ -236,8 +236,15 @@ namespace TimeLiner.Views
 
         private static void OnTextBlockLayoutUpdated(object sender, EventArgs e)
         {
+#if SCROLL_PROFILE
+            long layoutStart = System.Diagnostics.Stopwatch.GetTimestamp();
+            TextLayoutCalls++;
+#endif
             if (sender is TextBlock textBlock)
                 ScheduleUpdate(textBlock);
+#if SCROLL_PROFILE
+            TextLayoutTicks += System.Diagnostics.Stopwatch.GetTimestamp() - layoutStart;
+#endif
         }
 
         private static void OnTextBlockIsVisibleChanged(
@@ -405,6 +412,8 @@ namespace TimeLiner.Views
         internal static long TextWidthCalls;
         internal static long TextWidthMeasurements;
         internal static long TextWidthTicks;
+        internal static long TextLayoutCalls;
+        internal static long TextLayoutTicks;
 #endif
 
         internal static double GetDesiredTextWidth(TextBlock textBlock)

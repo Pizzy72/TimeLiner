@@ -103,6 +103,7 @@ internal static class Program
             Dpi = VisualTreeHelper.GetDpi(window).PixelsPerDip,
             RenderingTier = RenderCapability.Tier >> 16,
             CollisionProbe = CallbackField.Name,
+            DetailedFrames = Environment.GetEnvironmentVariable("TIMELINER_PROFILE_FRAMES") == "1",
             FrameDefinition = "Unique CompositionTarget.Rendering callbacks; not GPU presentation times"
         });
         if (Environment.GetEnvironmentVariable("TIMELINER_PROFILE_VERIFY") == "1")
@@ -153,6 +154,7 @@ internal static class Program
         Console.WriteLine($"Starting {scale}, run {run}");
         int layouts = 0, resets = 0, collisionCalls = 0, step = 0;
         int loadsBefore = ItemLoads;
+        FrameTrace trace = Environment.GetEnvironmentVariable("TIMELINER_PROFILE_FRAMES") == "1" ? new() : null;
         long? widthCallsBefore = ReadTextWidthCounter("TextWidthCalls");
         long? widthMeasurementsBefore = ReadTextWidthCounter("TextWidthMeasurements");
         long? widthTicksBefore = ReadTextWidthCounter("TextWidthTicks");
@@ -164,12 +166,14 @@ internal static class Program
         NotifyCollectionChangedEventHandler collectionHandler = (_, e) => { if (e.Action == NotifyCollectionChangedAction.Reset) resets++; };
         DispatcherHookEventHandler started = (_, e) =>
         {
+            trace?.Started(e.Operation);
             if (CallbackField.GetValue(e.Operation) is Delegate callback
                 && callback.Method.DeclaringType?.FullName?.Contains(nameof(TimelineItemTextBehavior)) == true)
                 collisions[e.Operation] = Stopwatch.GetTimestamp();
         };
         DispatcherHookEventHandler completed = (_, e) =>
         {
+            trace?.Completed(e.Operation);
             if (collisions.Remove(e.Operation, out long timestamp))
             {
                 collisionTicks += Stopwatch.GetTimestamp() - timestamp;
@@ -189,6 +193,7 @@ internal static class Program
             if (rendering == lastRendering) return;
             lastRendering = rendering;
             long now = Stopwatch.GetTimestamp();
+            trace?.Frame(now, step, layouts, ItemLoads - loadsBefore, collisionCalls, collisionTicks, setterMs);
             if (lastFrame != 0) frames.Add(Stopwatch.GetElapsedTime(lastFrame, now).TotalMilliseconds);
             lastFrame = now;
             if (step == steps) { done.TrySetResult(); return; }
@@ -201,6 +206,7 @@ internal static class Program
             long before = Stopwatch.GetTimestamp();
             model.HorizontalScrollOffset = start + travel * ++step / steps;
             setterMs += Stopwatch.GetElapsedTime(before).TotalMilliseconds;
+            trace?.Scroll(before, Stopwatch.GetTimestamp(), step);
             if (step == steps) input.Stop();
         };
         Process process = Process.GetCurrentProcess();
@@ -221,6 +227,7 @@ internal static class Program
         try { await done.Task.WaitAsync(TimeSpan.FromSeconds(45)); }
         finally
         {
+            trace?.Stop();
             input.Stop();
             CompositionTarget.Rendering -= render;
             hooks.OperationStarted -= started;
@@ -244,8 +251,83 @@ internal static class Program
             TextWidthCalls = ReadTextWidthCounter("TextWidthCalls") - widthCallsBefore,
             TextWidthMeasurements = ReadTextWidthCounter("TextWidthMeasurements") - widthMeasurementsBefore,
             TextWidthMs = (ReadTextWidthCounter("TextWidthTicks") - widthTicksBefore) * 1000d / Stopwatch.Frequency,
-            FrameIntervalsMs = frames
+            FrameIntervalsMs = frames,
+            Trace = trace?.Export()
         };
+    }
+
+    // Opt-in diagnostics only. Preallocate records and resolve callback names after
+    // the run so the measured dispatcher path does not format strings or write files.
+    private sealed class FrameTrace
+    {
+        private readonly long origin = Stopwatch.GetTimestamp();
+        private readonly Dictionary<DispatcherOperation, (long Start, MethodInfo Method, int Depth)> active = new();
+        private readonly List<OperationSample> operations = new(8192);
+        private readonly List<FrameSample> frames = new(256);
+        private readonly List<ScrollSample> scrolls = new(64);
+        private readonly FieldInfo layoutCalls = typeof(TimelineItemTextBehavior).GetField("TextLayoutCalls", BindingFlags.Static | BindingFlags.NonPublic);
+        private readonly FieldInfo layoutTicks = typeof(TimelineItemTextBehavior).GetField("TextLayoutTicks", BindingFlags.Static | BindingFlags.NonPublic);
+        private int depth;
+
+        public void Started(DispatcherOperation operation)
+        {
+            long now = Stopwatch.GetTimestamp();
+            MethodInfo method = (CallbackField.GetValue(operation) as Delegate)?.Method;
+            active[operation] = (now, method, depth++);
+        }
+
+        public void Completed(DispatcherOperation operation)
+        {
+            long now = Stopwatch.GetTimestamp();
+            if (!active.Remove(operation, out var entry)) return;
+            depth--;
+            operations.Add(new(entry.Start, now, entry.Method, (int)operation.Priority, entry.Depth));
+        }
+
+        public void Frame(long now, int step, int layouts, int loads, int collisions, long collisionTicks, double setterMs) =>
+            frames.Add(new(now, step, layouts, loads, collisions, collisionTicks, setterMs,
+                GC.GetAllocatedBytesForCurrentThread(), GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2),
+                (long?)layoutCalls?.GetValue(null), (long?)layoutTicks?.GetValue(null), GC.GetTotalPauseDuration().Ticks));
+
+        public void Scroll(long start, long end, int step) => scrolls.Add(new(start, end, step));
+
+        public void Stop()
+        {
+            long now = Stopwatch.GetTimestamp();
+            foreach (var entry in active)
+                operations.Add(new(entry.Value.Start, now, entry.Value.Method,
+                    (int)entry.Key.Priority, entry.Value.Depth));
+        }
+
+        private double Ms(long timestamp) => (timestamp - origin) * 1000d / Stopwatch.Frequency;
+
+        public object Export() => new
+        {
+            // The first/last rendering operation can straddle the observation window.
+            // Pending operations are included only up to Stop(), not their full duration.
+            TruncatedOperations = active.Count,
+            Operations = operations.Select(x => new
+            {
+                StartMs = Ms(x.Start), EndMs = Ms(x.End),
+                Callback = x.Method == null ? "unknown" : x.Method.DeclaringType?.FullName + "." + x.Method.Name,
+                Priority = x.Priority, Depth = x.Depth
+            }).ToArray(),
+            Frames = frames.Select(x => new
+            {
+                AtMs = Ms(x.At), x.Step, x.Layouts, x.Loads, x.Collisions,
+                CollisionMs = x.CollisionTicks * 1000d / Stopwatch.Frequency,
+                x.SetterMs, x.AllocatedBytes, x.Gen0, x.Gen1, x.Gen2, x.TextLayoutCalls,
+                GcPauseMs = x.GcPauseTicks / (double)TimeSpan.TicksPerMillisecond,
+                TextLayoutMs = x.TextLayoutTicks * 1000d / Stopwatch.Frequency
+            }).ToArray(),
+            Scrolls = scrolls.Select(x => new { StartMs = Ms(x.Start), EndMs = Ms(x.End), x.Step }).ToArray()
+        };
+
+        private readonly record struct OperationSample(long Start, long End, MethodInfo Method, int Priority, int Depth);
+        private readonly record struct FrameSample(long At, int Step, int Layouts, int Loads, int Collisions,
+            long CollisionTicks, double SetterMs, long AllocatedBytes, int Gen0, int Gen1, int Gen2,
+            long? TextLayoutCalls, long? TextLayoutTicks, long GcPauseTicks);
+        private readonly record struct ScrollSample(long Start, long End, int Step);
     }
 
     private static double Percentile(double[] values, double percentile) => values[(int)Math.Ceiling(percentile * values.Length) - 1];
