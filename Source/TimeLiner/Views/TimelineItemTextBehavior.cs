@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -109,6 +110,11 @@ namespace TimeLiner.Views
                 "UpdatePending", typeof(bool), typeof(TimelineItemTextBehavior),
                 new PropertyMetadata(false));
 
+        private static readonly DependencyProperty AnchorHostProperty =
+            DependencyProperty.RegisterAttached(
+                "AnchorHost", typeof(FrameworkElement), typeof(TimelineItemTextBehavior),
+                new PropertyMetadata(null));
+
         private static void OnIsTextAnchorChanged(
             DependencyObject d,
             DependencyPropertyChangedEventArgs e)
@@ -116,10 +122,42 @@ namespace TimeLiner.Views
             if (d is not FrameworkElement anchor)
                 return;
 
-            CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
+            OnTextAnchorUnloaded(anchor, null);
+            anchor.Loaded -= OnTextAnchorLoaded;
+            anchor.Unloaded -= OnTextAnchorUnloaded;
 
             if ((bool)e.NewValue)
-                CanvasLeftDescriptor.AddValueChanged(anchor, OnTextAnchorLeftChanged);
+            {
+                anchor.Loaded += OnTextAnchorLoaded;
+                anchor.Unloaded += OnTextAnchorUnloaded;
+                if (anchor.IsLoaded)
+                    OnTextAnchorLoaded(anchor, null);
+            }
+        }
+
+        private static void OnTextAnchorLoaded(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement anchor = (FrameworkElement)sender;
+            CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
+            CanvasLeftDescriptor.AddValueChanged(anchor, OnTextAnchorLeftChanged);
+            anchor.SetValue(AnchorHostProperty, FindTimelineHost(anchor));
+            OnTextAnchorLeftChanged(anchor, EventArgs.Empty);
+        }
+
+        private static void OnTextAnchorUnloaded(object sender, RoutedEventArgs e)
+        {
+            // Property descriptors retain their source strongly. A collection reset
+            // must not keep detached item templates and their bindings alive.
+            FrameworkElement anchor = (FrameworkElement)sender;
+            CanvasLeftDescriptor.RemoveValueChanged(anchor, OnTextAnchorLeftChanged);
+            FrameworkElement host = (FrameworkElement)anchor.GetValue(AnchorHostProperty);
+            anchor.ClearValue(AnchorHostProperty);
+
+            // Incremental removal does not reload the remaining labels. Their
+            // previous neighbour may disappear without moving any other anchor.
+            // Remember the host while loaded: the visual parent is gone by now.
+            if (host != null)
+                ScheduleHostUpdate(host);
         }
 
         private static void OnTextAnchorLeftChanged(object sender, EventArgs e)
@@ -344,18 +382,54 @@ namespace TimeLiner.Views
                 textBlock.Width = newWidth;
         }
 
-        private static double GetDesiredTextWidth(TextBlock textBlock)
+        private static readonly DependencyProperty NaturalTextWidthProperty =
+            DependencyProperty.RegisterAttached(
+                "NaturalTextWidth", typeof(TextWidthMeasurement), typeof(TimelineItemTextBehavior),
+                new PropertyMetadata(null));
+
+        // One entry per TextBlock, released with the visual. No global cache of labels.
+        private sealed record TextWidthMeasurement(
+            string Text, CultureInfo Culture, FontFamily Family, FontStyle Style,
+            FontWeight Weight, FontStretch Stretch, double Size,
+            FlowDirection Direction, double PixelsPerDip, double Width)
         {
+            public bool Matches(TextBlock block, CultureInfo culture, double pixelsPerDip) =>
+                Text == block.Text && ReferenceEquals(Culture, culture) && culture.IsReadOnly
+                && Equals(Family, block.FontFamily) && !string.IsNullOrEmpty(Family.Source)
+                && Style == block.FontStyle && Weight == block.FontWeight
+                && Stretch == block.FontStretch && Size == block.FontSize
+                && Direction == block.FlowDirection && PixelsPerDip == pixelsPerDip;
+        }
+
+#if SCROLL_PROFILE
+        internal static long TextWidthCalls;
+        internal static long TextWidthMeasurements;
+        internal static long TextWidthTicks;
+#endif
+
+        internal static double GetDesiredTextWidth(TextBlock textBlock)
+        {
+#if SCROLL_PROFILE
+            TextWidthCalls++;
+#endif
             string text = textBlock.Text ?? string.Empty;
 
             if (string.IsNullOrEmpty(text))
                 return 0d;
 
             DpiScale dpi = VisualTreeHelper.GetDpi(textBlock);
+            CultureInfo culture = CultureInfo.CurrentUICulture;
+            if (textBlock.GetValue(NaturalTextWidthProperty) is TextWidthMeasurement cached
+                && cached.Matches(textBlock, culture, dpi.PixelsPerDip))
+                return cached.Width;
 
+#if SCROLL_PROFILE
+            TextWidthMeasurements++;
+            long measurementStart = System.Diagnostics.Stopwatch.GetTimestamp();
+#endif
             FormattedText formattedText = new(
                 text,
-                System.Globalization.CultureInfo.CurrentUICulture,
+                culture,
                 textBlock.FlowDirection,
                 new Typeface(
                     textBlock.FontFamily,
@@ -367,7 +441,15 @@ namespace TimeLiner.Views
                 Brushes.Transparent,
                 dpi.PixelsPerDip);
 
-            return Math.Ceiling(formattedText.WidthIncludingTrailingWhitespace);
+            double width = Math.Ceiling(formattedText.WidthIncludingTrailingWhitespace);
+#if SCROLL_PROFILE
+            TextWidthTicks += System.Diagnostics.Stopwatch.GetTimestamp() - measurementStart;
+#endif
+            textBlock.SetValue(NaturalTextWidthProperty, new TextWidthMeasurement(
+                text, culture, textBlock.FontFamily, textBlock.FontStyle,
+                textBlock.FontWeight, textBlock.FontStretch, textBlock.FontSize,
+                textBlock.FlowDirection, dpi.PixelsPerDip, width));
+            return width;
         }
 
         private static FrameworkElement FindTimelineHost(DependencyObject start)

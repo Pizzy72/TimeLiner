@@ -3,6 +3,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -14,6 +15,92 @@ namespace TimeLinerTest
     [TestClass]
     public class TestTimelineItemTextBehavior
     {
+        [STATestMethod]
+        public void RemovingNeighbour_RestoresStationaryLabelWidth()
+        {
+            Canvas host = new() { Width = 800, Height = 40 };
+            TimelineItemTextBehavior.SetIsTimelineHost(host, true);
+            var first = AddItem(host, 60, 4);
+            var next = AddItem(host, 80, 4);
+            Window window = new()
+            {
+                Content = host, Width = 820, Height = 80,
+                ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+            };
+            try
+            {
+                window.Show();
+                FlushLayout(window);
+                Assert.AreEqual(14d, first.Text.Width);
+                host.Children.Remove(next.Anchor);
+                FlushLayout(window);
+                Assert.IsTrue(double.IsNaN(first.Text.Width), "Removing an obstacle must update surviving labels even if their anchors did not move.");
+            }
+            finally { window.Close(); }
+        }
+
+        [STATestMethod]
+        public void UnloadedAnchor_DoesNotRemainRootedByPositionListener()
+        {
+            Canvas host = new() { Width = 800, Height = 40 };
+            TimelineItemTextBehavior.SetIsTimelineHost(host, true);
+            Window window = new()
+            {
+                Content = host, Width = 820, Height = 80,
+                ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+            };
+            try
+            {
+                window.Show();
+                WeakReference reference = AddAndRemoveAnchor(host, window);
+                for (int i = 0; i < 3; i++)
+                {
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    FlushLayout(window);
+                }
+                Assert.IsFalse(reference.IsAlive, "An unloaded anchor must not be retained by a property descriptor listener.");
+            }
+            finally { window.Close(); }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static WeakReference AddAndRemoveAnchor(Canvas host, Window window)
+        {
+            (Canvas anchor, _) = AddItem(host, 60, 4);
+            FlushLayout(window);
+            host.Children.Remove(anchor);
+            FlushLayout(window);
+            return new WeakReference(anchor);
+        }
+
+        [STATestMethod]
+        public void ReloadedAnchor_ResumesCollisionUpdates()
+        {
+            Canvas host = new() { Width = 800, Height = 40 };
+            TimelineItemTextBehavior.SetIsTimelineHost(host, true);
+            var first = AddItem(host, 60, 4);
+            var next = AddItem(host, 160, 4);
+            Window window = new()
+            {
+                Content = host, Width = 820, Height = 80,
+                ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+            };
+            try
+            {
+                window.Show();
+                FlushLayout(window);
+                host.Children.Remove(next.Anchor);
+                FlushLayout(window);
+                host.Children.Add(next.Anchor);
+                FlushLayout(window);
+                Canvas.SetLeft(next.Anchor, 80);
+                FlushLayout(window);
+                Assert.AreEqual(14d, first.Text.Width);
+            }
+            finally { window.Close(); }
+        }
+
         [STATestMethod]
         public void ScrollBatch_CoalescesLabelUpdates_AndPreservesSpacing()
         {

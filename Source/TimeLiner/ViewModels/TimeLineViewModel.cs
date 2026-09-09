@@ -1,9 +1,11 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Data;
 using System.Windows.Input;
 using TimeLiner.Common;
@@ -24,6 +26,11 @@ namespace TimeLiner.ViewModels
         /// <see cref="TimeLineItems"/>
         /// <see cref="TimeLineItemCollectionView"/>
         private List<TimeLineItemViewModel> _timeLineItems = [];
+
+        private ICollectionView _timeLineItemCollectionView;
+        private readonly ObservableCollection<TimeLineItemViewModel> _visibleItems = [];
+
+        private HashSet<TimeLineItemViewModel> _visibleTimeLineItems;
 
         /// <see cref="IsUniversalTime" />
         private bool _isUniversalTime;
@@ -68,12 +75,18 @@ namespace TimeLiner.ViewModels
         /// <summary>
         /// The model of the associated timeline.
         /// </summary>
-        public TimeLineModel TimeLineModel { get; }
+        public TimeLineModel TimeLineModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The main view model.
         /// </summary>
-        public TimeLinesViewModel TimeLinesViewModel { get; }
+        public TimeLinesViewModel TimeLinesViewModel
+        {
+            get;
+        }
 
         /// <summary>
         /// The view models of the timeline items of this timeline.
@@ -89,9 +102,9 @@ namespace TimeLiner.ViewModels
         /// Constructor.
         /// </summary>
         public TimeLineViewModel(
-            TimeLinesViewModel timeLinesViewModel, 
-            TimeLineModel timeLineModel, 
-            SettingsViewModel settingsViewModel, 
+            TimeLinesViewModel timeLinesViewModel,
+            TimeLineModel timeLineModel,
+            SettingsViewModel settingsViewModel,
             TimeLineScalingViewModel timeLineScaling
             )
         {
@@ -105,8 +118,11 @@ namespace TimeLiner.ViewModels
 
             foreach (TimeLineItemModel timeLineItemModel in TimeLineModel.TimeLineItems)
             {
-                _timeLineItems.Add(new TimeLineItemViewModel(timeLineItemModel, this, _settingsViewModel, timeLineScaling));
+                TimeLineItemViewModel item = new(timeLineItemModel, this, _settingsViewModel, timeLineScaling);
+                PropertyChangedEventManager.AddHandler(item, TimeLineItem_PropertyChanged, "");
+                _timeLineItems.Add(item);
             }
+
         }
 
         /// <summary>
@@ -199,23 +215,10 @@ namespace TimeLiner.ViewModels
         {
             get
             {
-                ICollectionView view = CollectionViewSource.GetDefaultView(_timeLineItems);
-
-                double timeLineLeft = -_settingsViewModel.TimeLineSpacerLeft;
-                double timeLineRight = timeLineLeft + TimeLinesViewModel.TimeLinesVisibleWidth;
-
-                view.Filter = o =>
-                {
-                    TimeLineItemViewModel timeLineItem = (TimeLineItemViewModel)o;
-
-                    double timeLineItemLeft = timeLineItem.Left;
-
-                    bool isVisible = timeLineItemLeft >= timeLineLeft && timeLineItemLeft < timeLineRight;
-
-                    return isVisible;
-                };
-
-                return view;
+                EnsureVisibleTimeLineItems();
+                // Create the dispatcher-bound view on first use by the UI,
+                // rather than while the model is being loaded.
+                return _timeLineItemCollectionView ??= CollectionViewSource.GetDefaultView(_visibleItems);
             }
         }
 
@@ -273,12 +276,12 @@ namespace TimeLiner.ViewModels
             switch (e.PropertyName)
             {
                 case nameof(TimeLinesViewModel.Scale):
-                    NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
+                    InvalidateHorizontalViewport();
                     break;
 
                 case nameof(TimeLinesViewModel.HorizontalScrollOffset):
                     if (IsInVerticalViewport)
-                        NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
+                        RefreshHorizontalViewport();
                     else
                         _hasDeferredScrollUpdate = true;
                     break;
@@ -302,9 +305,70 @@ namespace TimeLiner.ViewModels
                 return;
 
             _hasDeferredScrollUpdate = false;
-            NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
-            foreach (TimeLineItemViewModel item in _timeLineItems)
+            RefreshHorizontalViewport();
+        }
+
+        private void InvalidateHorizontalViewport()
+        {
+            _visibleTimeLineItems = null;
+            if (IsInVerticalViewport)
+                RefreshHorizontalViewport();
+            else
+                _hasDeferredScrollUpdate = true;
+        }
+
+        private void EnsureVisibleTimeLineItems()
+        {
+            if (_visibleTimeLineItems == null)
+            {
+                _visibleTimeLineItems = CalculateVisibleTimeLineItems();
+                SynchronizeVisibleItems(_visibleTimeLineItems);
+            }
+        }
+
+        private HashSet<TimeLineItemViewModel> CalculateVisibleTimeLineItems()
+        {
+            return _timeLineItems.Where(item => item.IsInHorizontalViewport).ToHashSet();
+        }
+
+        private void RefreshHorizontalViewport()
+        {
+            HashSet<TimeLineItemViewModel> oldVisibleItems = _visibleTimeLineItems;
+            HashSet<TimeLineItemViewModel> newVisibleItems = CalculateVisibleTimeLineItems();
+
+            IEnumerable<TimeLineItemViewModel> changedItems = oldVisibleItems == null
+                ? newVisibleItems
+                : oldVisibleItems.Union(newVisibleItems);
+
+            _visibleTimeLineItems = newVisibleItems;
+
+            foreach (TimeLineItemViewModel item in changedItems)
                 item.RefreshViewportGeometry();
+
+            // Preserve the containers of surviving items even when a neighbour
+            // enters or leaves the viewport.
+            if (oldVisibleItems == null || !oldVisibleItems.SetEquals(newVisibleItems))
+                SynchronizeVisibleItems(newVisibleItems);
+        }
+
+        private void SynchronizeVisibleItems(HashSet<TimeLineItemViewModel> visibleItems)
+        {
+            for (int i = _visibleItems.Count - 1; i >= 0; i--)
+                if (!visibleItems.Contains(_visibleItems[i]))
+                    _visibleItems.RemoveAt(i);
+
+            // Model order determines the visual order of coincident markers.
+            // Surviving items retain their relative order; only insert missing ones.
+            int index = 0;
+            foreach (TimeLineItemViewModel item in _timeLineItems)
+            {
+                if (!visibleItems.Contains(item))
+                    continue;
+
+                if (index == _visibleItems.Count || !ReferenceEquals(_visibleItems[index], item))
+                    _visibleItems.Insert(index, item);
+                index++;
+            }
         }
 
         /// <summary>
@@ -315,9 +379,16 @@ namespace TimeLiner.ViewModels
             switch (e.PropertyName)
             {
                 case nameof(SettingsViewModel.IsCompactTimeGrid):
-                    NotifyPropertyChanged(nameof(TimeLineItemCollectionView));
+                    InvalidateHorizontalViewport();
                     break;
             }
+        }
+
+        private void TimeLineItem_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(TimeLineItemViewModel.StartTime)
+                || e.PropertyName == nameof(TimeLineItemViewModel.EndTime))
+                InvalidateHorizontalViewport();
         }
 
         /// <summary>
@@ -327,7 +398,10 @@ namespace TimeLiner.ViewModels
         {
             TimeLineModel.RemoveTimeLineItem(timeLineItem.TimeLineItemModel);
             bool isDeleted = _timeLineItems.Remove(timeLineItem);
+            PropertyChangedEventManager.RemoveHandler(timeLineItem, TimeLineItem_PropertyChanged, "");
             timeLineItem.Dispose();
+
+            InvalidateHorizontalViewport();
 
             return isDeleted;
         }
@@ -339,7 +413,9 @@ namespace TimeLiner.ViewModels
         {
             timeLineItem.TimeLineViewModel = this;
             TimeLineModel.AddTimeLineItem(timeLineItem.TimeLineItemModel);
+            PropertyChangedEventManager.AddHandler(timeLineItem, TimeLineItem_PropertyChanged, "");
             _timeLineItems.Add(timeLineItem);
+            InvalidateHorizontalViewport();
         }
 
         /// <summary>
@@ -357,6 +433,7 @@ namespace TimeLiner.ViewModels
 
                     foreach (TimeLineItemViewModel timeLineItem in _timeLineItems)
                     {
+                        PropertyChangedEventManager.RemoveHandler(timeLineItem, TimeLineItem_PropertyChanged, "");
                         timeLineItem.Dispose();
                     }
 

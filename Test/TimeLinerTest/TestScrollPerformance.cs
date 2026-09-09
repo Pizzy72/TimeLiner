@@ -4,6 +4,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -27,6 +28,103 @@ namespace TimeLinerTest
     [TestClass]
     public class TestScrollPerformance
     {
+        [STATestMethod]
+        public void HorizontalScroll_UnchangedMembership_PreservesContainersAndUpdatesGeometry()
+        {
+            SettingsViewModel settings = new(new SettingsRepositoryStub(new SettingsModel()));
+            TimeLinesViewModel model = new(new DialogServiceStub(), settings, new(settings));
+            model.TimeLinesVisibleHeight = 30;
+            RunOnDispatcher(() => model.LoadAsync(@"TestData\VisibleTimeLineItems.csv", 500));
+            model.Scale = ScaleIndex.OneMinute;
+            TimeLineViewModel row = model.TimeLines[0];
+            ICollectionView view = row.TimeLineItemCollectionView;
+            TimeLineItemViewModel item = row.TimeLineItems[0];
+            ItemsControl items = new()
+            {
+                ItemsSource = view
+            };
+            Window window = new()
+            {
+                Content = items,
+                Width = 520,
+                Height = 100,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                Left = -10000,
+                Top = -10000
+            };
+            int resets = 0;
+            view.CollectionChanged += (_, e) => { if (e.Action == NotifyCollectionChangedAction.Reset) resets++; };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                object container = items.ItemContainerGenerator.ContainerFromItem(item);
+                Assert.IsNotNull(container);
+                Border boundVisual = new()
+                {
+                    DataContext = item
+                };
+                boundVisual.SetBinding(Canvas.LeftProperty, new Binding(nameof(item.Left)));
+                double oldLeft = Canvas.GetLeft(boundVisual);
+                TimeLineItemViewModel[] before = view.Cast<TimeLineItemViewModel>().ToArray();
+
+                model.HorizontalScrollOffset = 10;
+                window.UpdateLayout();
+
+                CollectionAssert.AreEqual(before, view.Cast<TimeLineItemViewModel>().ToArray());
+                Assert.AreEqual(0, resets, "Unchanged membership must not rebuild item containers.");
+                Assert.AreSame(container, items.ItemContainerGenerator.ContainerFromItem(item));
+                Assert.AreEqual(oldLeft - 10, Canvas.GetLeft(boundVisual));
+                Assert.AreEqual(item.Left, Canvas.GetLeft(boundVisual));
+            }
+            finally { window.Close(); }
+        }
+
+        [STATestMethod]
+        public void HorizontalScroll_MembershipChanges_PreservesSurvivingContainersInBothDirections()
+        {
+            SettingsViewModel settings = new(new SettingsRepositoryStub(new SettingsModel()));
+            TimeLinesViewModel model = new(new DialogServiceStub(), settings, new(settings));
+            model.TimeLinesVisibleHeight = 30;
+            RunOnDispatcher(() => model.LoadAsync(@"TestData\VisibleTimeLineItems.csv", 200));
+            model.Scale = ScaleIndex.OneMinute;
+            TimeLineViewModel row = model.TimeLines[0];
+            ICollectionView view = row.TimeLineItemCollectionView;
+            System.Collections.Generic.List<NotifyCollectionChangedAction> changes = [];
+            view.CollectionChanged += (_, e) => changes.Add(e.Action);
+            ItemsControl items = new() { ItemsSource = view };
+            Window window = new()
+            {
+                Content = items, Width = 520, Height = 150,
+                ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+            };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                foreach (double offset in new double[] { 10, 100, 250, 300, 0 })
+                {
+                    TimeLineItemViewModel[] before = view.Cast<TimeLineItemViewModel>().ToArray();
+                    var containers = before.ToDictionary(item => item, items.ItemContainerGenerator.ContainerFromItem);
+                    changes.Clear();
+                    model.HorizontalScrollOffset = offset;
+                    window.UpdateLayout();
+                    TimeLineItemViewModel[] expected = row.TimeLineItems.Where(item => item.IsInHorizontalViewport).ToArray();
+                    CollectionAssert.AreEqual(expected, view.Cast<TimeLineItemViewModel>().ToArray());
+                    Assert.AreEqual(expected.Except(before).Count(), changes.Count(x => x == NotifyCollectionChangedAction.Add));
+                    Assert.AreEqual(before.Except(expected).Count(), changes.Count(x => x == NotifyCollectionChangedAction.Remove));
+                    Assert.IsFalse(changes.Contains(NotifyCollectionChangedAction.Reset));
+                    foreach (TimeLineItemViewModel survivor in expected.Intersect(before))
+                    {
+                        Assert.IsNotNull(containers[survivor]);
+                        Assert.AreSame(containers[survivor], items.ItemContainerGenerator.ContainerFromItem(survivor));
+                    }
+                }
+            }
+            finally { window.Close(); }
+        }
+
         [STATestMethod]
         public void HiddenRow_ReenteringViewport_RefreshesExistingBindings()
         {
@@ -63,6 +161,47 @@ namespace TimeLinerTest
         }
 
         [STATestMethod]
+        public void VisibleCollection_PreservesModelOrderAcrossZoomResizeEditsAndUndo()
+        {
+            SettingsViewModel settings = new(new SettingsRepositoryStub(new SettingsModel()));
+            TimeLinesViewModel model = new(new DialogServiceStub(), settings, new(settings));
+            model.TimeLinesVisibleHeight = 30;
+            RunOnDispatcher(() => model.LoadAsync(@"TestData\VisibleTimeLineItems.csv", 200));
+            void AssertVisibleOrder()
+            {
+                foreach (TimeLineViewModel row in model.TimeLines)
+                    CollectionAssert.AreEqual(
+                        row.TimeLineItems.Where(item => item.IsInHorizontalViewport).ToArray(),
+                        row.TimeLineItemCollectionView.Cast<TimeLineItemViewModel>().ToArray());
+            }
+
+            model.Scale = ScaleIndex.OneMinute;
+            AssertVisibleOrder();
+            model.HorizontalScrollOffset = 150;
+            AssertVisibleOrder();
+            settings.IsCompactTimeGrid = true;
+            AssertVisibleOrder();
+            model.TimeLinesVisibleWidth = 350;
+            AssertVisibleOrder();
+            model.Scale = ScaleIndex.Second;
+            AssertVisibleOrder();
+            model.Scale = ScaleIndex.FiveMinutes;
+            model.HorizontalScrollOffset = 0;
+            AssertVisibleOrder();
+
+            TimeLineItemViewModel last = model.TimeLines[0].TimeLineItems[2];
+            // Coincident items retain model order, rather than insertion/time order.
+            last.ShiftStartTime(model.TimeLines[0].TimeLineItems[0].StartTime);
+            AssertVisibleOrder();
+            RunOnDispatcher(() => model.DeleteTimeLineItem(last));
+            AssertVisibleOrder();
+            RunOnDispatcher(() => model.UndoAsync());
+            AssertVisibleOrder();
+            RunOnDispatcher(() => model.RedoAsync());
+            AssertVisibleOrder();
+        }
+
+        [STATestMethod]
         [TestCategory("Performance")]
         public void ExternalFile_ScrollBenchmark()
         {
@@ -82,9 +221,13 @@ namespace TimeLinerTest
             // Bind setters once so reflection is excluded from the measured scroll loop.
             Action<double> setHorizontal = modelType.GetProperty("HorizontalScrollOffset").SetMethod.CreateDelegate<Action<double>>(model);
             Action<double> setVertical = modelType.GetProperty("VerticalScrollOffset").SetMethod.CreateDelegate<Action<double>>(model);
+            Func<double> getHorizontalMaximum = modelType.GetProperty("HorizontalScrollMaximum").GetMethod.CreateDelegate<Func<double>>(model);
+            bool useFullHorizontalRange = Environment.GetEnvironmentVariable("TIMELINER_BENCHMARK_FULL_RANGE") == "1";
+            double horizontalStep = useFullHorizontalRange ? getHorizontalMaximum() / 59d : 10d;
             object[] timelines = ((IEnumerable)modelType.GetProperty("TimeLines").GetValue(model)).Cast<object>().ToArray();
             string binary = modelType.Assembly.Location;
             Console.WriteLine($"BINARY version={modelType.Assembly.GetName().Version} sha256={Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(binary)))} runtime={Environment.Version}");
+            Console.WriteLine($"RANGE horizontal=0..{horizontalStep * 59:F2} full={useFullHorizontalRange}");
             Assert.AreEqual(30d, rowHeight, "Both builds must use normal row height.");
 
             // A fixed WPF binding/layout harness, not the complete application window.
@@ -143,7 +286,7 @@ namespace TimeLinerTest
                             if (vertical)
                                 setVertical((step % 60) * rowHeight);
                             else
-                                setHorizontal((step % 60) * 10);
+                                setHorizontal((step % 60) * horizontalStep);
                             Flush(window);
                         }
                         timer.Stop();

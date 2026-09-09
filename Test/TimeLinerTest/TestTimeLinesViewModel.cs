@@ -895,10 +895,10 @@ namespace TimeLinerTest
             Assert.AreEqual(originalLeft - 50, hidden.Left);
 
             _timeLinesViewModel.VerticalScrollOffset = 30;
-            CollectionAssert.AreEquivalent(new[] { "Left", "Width", "IsTimeSpanVisible", "IsTimeEventVisible" }, hiddenChanges);
+            Assert.AreEqual(0, hiddenChanges.Count);
             hiddenChanges.Clear();
             firstChanges.Clear();
-            _timeLinesViewModel.HorizontalScrollOffset = 75;
+            _timeLinesViewModel.HorizontalScrollOffset = 6000;
             Assert.AreEqual(0, firstChanges.Count);
             Assert.AreEqual(4, hiddenChanges.Count);
             _timeLinesViewModel.VerticalScrollOffset = 0;
@@ -922,7 +922,7 @@ namespace TimeLinerTest
             changes.Clear();
             item.Name = "Edited while off screen";
             changes.Clear();
-            _timeLinesViewModel.TimeLinesVisibleWidth = 800;
+            _timeLinesViewModel.TimeLinesVisibleWidth = 1000;
             _timeLinesViewModel.TimeLinesVisibleHeight = 150;
             Assert.IsTrue(changes.Contains("Width"));
             Assert.AreEqual("Edited while off screen", item.Name);
@@ -943,6 +943,55 @@ namespace TimeLinerTest
             await _timeLinesViewModel.UndoAsync();
             CollectionAssert.AreEqual(Enumerable.Range(0, 5).ToArray(),
                 _timeLinesViewModel.TimeLines.Select(x => x.RowIndex).ToArray());
+        }
+
+        [TestMethod]
+        public async Task HorizontalScroll_StopsUpdatingItemsAfterTheyLeaveViewport()
+        {
+            _timeLinesViewModel.TimeLinesVisibleHeight = 30;
+            await _timeLinesViewModel.LoadAsync(@"TestData\VisibleTimeLineItems.csv", 300);
+            _timeLinesViewModel.Scale = ScaleIndex.OneMinute;
+            TimeLineViewModel row = _timeLinesViewModel.TimeLines[0];
+            _ = row.TimeLineItemCollectionView.Cast<TimeLineItemViewModel>().ToList();
+            TimeLineItemViewModel first = row.TimeLineItems[0];
+            List<string> changes = [];
+            first.PropertyChanged += (_, e) => changes.Add(e.PropertyName);
+
+            // A span remains visible while only its start lies left of the viewport.
+            _timeLinesViewModel.HorizontalScrollOffset = 150;
+            Assert.IsTrue(row.TimeLineItemCollectionView.Cast<TimeLineItemViewModel>().Contains(first));
+            Assert.AreEqual(50d, first.Width);
+
+            // The item is updated once while leaving the viewport.
+            changes.Clear();
+            _timeLinesViewModel.HorizontalScrollOffset = 250;
+            Assert.AreEqual(4, changes.Count);
+            Assert.IsFalse(row.TimeLineItemCollectionView.Cast<TimeLineItemViewModel>().Contains(first));
+
+            changes.Clear();
+            _timeLinesViewModel.HorizontalScrollOffset = 300;
+            Assert.AreEqual(0, changes.Count);
+
+            // It is updated immediately when scrolling back into view.
+            _timeLinesViewModel.HorizontalScrollOffset = 0;
+            Assert.AreEqual(4, changes.Count);
+            Assert.IsTrue(row.TimeLineItemCollectionView.Cast<TimeLineItemViewModel>().Contains(first));
+        }
+
+        [TestMethod]
+        public async Task MovingItemIntoHorizontalViewport_RefreshesCollectionImmediately()
+        {
+            _timeLinesViewModel.TimeLinesVisibleHeight = 30;
+            await _timeLinesViewModel.LoadAsync(@"TestData\VisibleTimeLineItems.csv", 200);
+            _timeLinesViewModel.Scale = ScaleIndex.OneMinute;
+            TimeLineViewModel row = _timeLinesViewModel.TimeLines[0];
+            TimeLineItemViewModel item = row.TimeLineItems[2];
+            Assert.IsFalse(row.TimeLineItemCollectionView.Cast<TimeLineItemViewModel>().Contains(item));
+
+            item.ShiftStartTime(_timeLinesViewModel.TotalStartTime + TimeSpan.FromSeconds(30));
+
+            Assert.IsTrue(row.TimeLineItemCollectionView.Cast<TimeLineItemViewModel>().Contains(item));
+            Assert.AreEqual(50d, item.Left);
         }
 
         private static SettingsRepositoryStub CreateSettingsRepository()

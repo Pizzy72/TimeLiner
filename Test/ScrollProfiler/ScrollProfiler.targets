@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);SCROLL_PROFILE</DefineConstants>
+  </PropertyGroup>
+  <!-- Opt-in entry point: all application code and WPF resources are compiled normally. -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Program.cs" />
+  </ItemGroup>
+</Project>
