@@ -185,8 +185,8 @@ namespace TimeLiner.ViewModels
         /// </summary>
         public static class TimeLinerColors
         {
-            public static Color TimeSpan = Colors.DeepSkyBlue;
-            public static Color TimeEvent = Colors.DeepPink;
+            public static Color TimeSpan = Color.FromRgb(0x3F, 0xFF, 0xFF);
+            public static Color TimeEvent = Color.FromRgb(0xFF, 0x3F, 0xFF);
         }
 
         /// <summary>
