@@ -96,7 +96,10 @@ namespace TimeLiner.Models
         /// </summary>
         public async Task SaveAsync(string filePath)
         {
-            using FileStream stream = File.OpenWrite(filePath);
+            // OpenWrite does not truncate an existing file. If the new document is
+            // shorter than the previous one, stale CSV rows remain at the end and
+            // are loaded again the next time the file is opened.
+            using FileStream stream = new(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
 
             await SaveAsync(stream);
 

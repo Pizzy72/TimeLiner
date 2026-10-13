@@ -2,6 +2,8 @@
 // Copyright (c) 2021–2025 Christian Pistor
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TimeLiner.Common;
@@ -215,6 +217,32 @@ namespace TimeLinerTest
             // Assert
             Assert.AreEqual(1, model.TimeLines.Count);
             Assert.AreEqual(0, model.TimeLineItemCount);
+        }
+
+        [TestMethod]
+        public async Task SaveAsync_ExistingFileIsShortened_Succeeds()
+        {
+            // Arrange: write a longer document first, then save a shorter one over it.
+            string filePath = Path.Combine(TestContext.TestRunDirectory, $"{Guid.NewGuid()}.tli");
+            try
+            {
+                TimeLinesModel original = await TimeLinesModel.LoadAsync(@"TestData\QuotedColumns.csv");
+                await original.SaveAsync(filePath);
+
+                TimeLinesModel shorter = await TimeLinesModel.LoadAsync(@"TestData\EmptyTimeLine.csv");
+
+                // Act
+                await shorter.SaveAsync(filePath);
+
+                // Assert: stale bytes from the first save must not survive.
+                TimeLinesModel reloaded = await TimeLinesModel.LoadAsync(filePath);
+                Assert.AreEqual(1, reloaded.TimeLines.Count);
+                Assert.AreEqual(0, reloaded.TimeLineItemCount);
+            }
+            finally
+            {
+                File.Delete(filePath);
+            }
         }
     }
 }
