@@ -14,8 +14,8 @@ Copyright (c) 2021-2026 Christian Pistor
     xmlns:ui="clr-namespace:TimeLiner.UI"
     Background="{DynamicResource WindowBackgroundBrush}"
     Title="Color"
-    Width="630"
-    Height="360"
+    Width="368"
+    Height="285"
     KeyDown="Window_KeyDown"
     Loaded="Window_Loaded"
     ResizeMode="NoResize"
@@ -38,6 +38,7 @@ Copyright (c) 2021-2026 Christian Pistor
         <Style x:Key="ColorListBoxStyle" TargetType="ListBox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="ItemTemplate" Value="{StaticResource ColorItemTemplate}" />
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
@@ -61,14 +62,19 @@ Copyright (c) 2021-2026 Christian Pistor
             <Setter Property="ItemsPanel">
                 <Setter.Value>
                     <ItemsPanelTemplate>
-                        <UniformGrid Columns="4" />
+                        <UniformGrid Columns="1" />
                     </ItemsPanelTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="ColorFamilyPanelStyle" TargetType="StackPanel">
-            <Setter Property="Width" Value="150" />
-            <Setter Property="HorizontalAlignment" Value="Left" />
+        <Style x:Key="GrayscaleListBoxStyle" TargetType="ListBox" BasedOn="{StaticResource ColorListBoxStyle}">
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Width="336" Columns="8" />
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </ui:BaseRibbonWindow.Resources>
 
@@ -77,64 +83,31 @@ Copyright (c) 2021-2026 Christian Pistor
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition Width="150" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Style="{StaticResource ColorFamilyPanelStyle}">
-                <!--<TextBlock Margin="3,0,0,2" FontSize="14" Text="Reds" />-->
-                <ListBox x:Name="ListBoxReds" Tag="Reds" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Style="{StaticResource ColorFamilyPanelStyle}">
-                <!--<TextBlock Margin="3,0,0,2" FontSize="14" Text="Oranges" />-->
-                <ListBox x:Name="ListBoxOranges" Tag="Oranges" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
-            </StackPanel>
-            <StackPanel Grid.Column="2" Style="{StaticResource ColorFamilyPanelStyle}">
-                <!--<TextBlock Margin="3,0,0,2" FontSize="14" Text="Yellows" />-->
-                <ListBox x:Name="ListBoxYellows" Tag="Yellows" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
-            </StackPanel>
-            <StackPanel Grid.Column="3" Style="{StaticResource ColorFamilyPanelStyle}">
-                <!--<TextBlock Margin="3,0,0,2" FontSize="14" Text="Grays" />-->
-                <ListBox x:Name="ListBoxGrayscale" Tag="Grayscale" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
-            </StackPanel>
-        </Grid>
+        <UniformGrid Grid.Row="0" Width="336" Columns="8" HorizontalAlignment="Left">
+            <ListBox x:Name="ListBoxReds" Grid.Column="0" Tag="Reds" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
+            <ListBox x:Name="ListBoxOranges" Grid.Column="1" Tag="Oranges" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
+            <ListBox x:Name="ListBoxYellows" Grid.Column="2" Tag="Yellows" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
+            <ListBox x:Name="ListBoxGreens" Grid.Column="3" Tag="Greens" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
+            <ListBox x:Name="ListBoxCyans" Grid.Column="4" Tag="Cyans" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
+            <ListBox x:Name="ListBoxBlues" Grid.Column="5" Tag="Blues" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
+            <ListBox x:Name="ListBoxViolets" Grid.Column="6" Tag="Violets" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
+            <ListBox x:Name="ListBoxMagentas" Grid.Column="7" Tag="Magentas" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
+        </UniformGrid>
 
-        <Grid Grid.Row="1" Margin="0,7,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition Width="150" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Style="{StaticResource ColorFamilyPanelStyle}">
-                <!--<TextBlock Margin="3,0,0,2" FontSize="14" Text="Greens" />-->
-                <ListBox x:Name="ListBoxGreens" Tag="Greens" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Style="{StaticResource ColorFamilyPanelStyle}">
-                <!--<TextBlock Margin="3,0,0,2" FontSize="14" Text="Cyans" />-->
-                <ListBox x:Name="ListBoxCyans" Tag="Cyans" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
-            </StackPanel>
-            <StackPanel Grid.Column="2" Style="{StaticResource ColorFamilyPanelStyle}">
-                <!--<TextBlock Margin="3,0,0,2" FontSize="14" Text="Blues" />-->
-                <ListBox x:Name="ListBoxBlues" Tag="Blues" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
-            </StackPanel>
-            <StackPanel Grid.Column="3" Style="{StaticResource ColorFamilyPanelStyle}">
-                <!--<TextBlock Margin="3,0,0,2" FontSize="14" Text="Violets" />-->
-                <ListBox x:Name="ListBoxViolets" Tag="Violets" Style="{StaticResource ColorListBoxStyle}" MouseDoubleClick="ListBoxColors_MouseDoubleClick" SelectionChanged="ListBoxColors_SelectionChanged" />
-            </StackPanel>
-        </Grid>
+        <ListBox
+            x:Name="ListBoxGrayscale"
+            Grid.Row="1"
+            Margin="0,-2,0,0"
+            Tag="Grayscale"
+            Style="{StaticResource GrayscaleListBoxStyle}"
+            MouseDoubleClick="ListBoxColors_MouseDoubleClick"
+            SelectionChanged="ListBoxColors_SelectionChanged" />
 
         <StackPanel
             Grid.Row="2"
-            Margin="0,16,0,0"
+            Margin="0,12,0,0"
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
             Orientation="Horizontal">

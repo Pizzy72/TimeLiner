@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2026 Christian Pistor
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -36,121 +35,36 @@ namespace TimeLiner.Views
         {
             List<ColorInfo> colors = [];
 
-            double[] grayscaleLightness =
-            {
-                0.18, 0.23, 0.28, 0.33,
-                0.38, 0.43, 0.48, 0.53,
-                0.58, 0.63, 0.68, 0.73,
-                0.78, 0.83, 0.88, 0.93
-            };
-            colors.AddRange(grayscaleLightness.Select(lightness =>
-                new ColorInfo("Grayscale", ColorFromOklch(lightness, 0, 0))));
+            foreach (byte value in new byte[] { 0, 32, 80, 128, 176, 208, 240, 255 })
+                colors.Add(new ColorInfo("Grayscale", Color.FromRgb(value, value, value)));
 
-            AddColorFamily(colors, "Reds", 25,
-                [0.34, 0.50, 0.66, 0.82], [0.13, 0.15, 0.145, 0.095]);
-            AddColorFamily(colors, "Oranges", 55,
-                [0.40, 0.54, 0.68, 0.82], [0.095, 0.125, 0.145, 0.105]);
-            AddColorFamily(colors, "Yellows", 95,
-                [0.48, 0.60, 0.72, 0.84], [0.095, 0.12, 0.14, 0.14]);
-            AddColorFamily(colors, "Greens", 145,
-                [0.34, 0.50, 0.66, 0.82], [0.10, 0.14, 0.16, 0.15]);
-            AddColorFamily(colors, "Cyans", 195,
-                [0.40, 0.54, 0.68, 0.82], [0.067, 0.092, 0.115, 0.115]);
-            AddColorFamily(colors, "Blues", 255,
-                [0.30, 0.47, 0.64, 0.81], [0.09, 0.135, 0.15, 0.09]);
-            AddColorFamily(colors, "Violets", 305,
-                [0.31, 0.48, 0.65, 0.82], [0.15, 0.195, 0.185, 0.11]);
+            AddColorFamily(colors, "Reds", Color.FromRgb(0xFF, 0x00, 0x00));
+            AddColorFamily(colors, "Oranges", Color.FromRgb(0xFF, 0x80, 0x00));
+            AddColorFamily(colors, "Yellows", Color.FromRgb(0xFF, 0xFF, 0x00));
+            AddColorFamily(colors, "Greens", Color.FromRgb(0x00, 0xFF, 0x00));
+            AddColorFamily(colors, "Cyans", Color.FromRgb(0x00, 0xFF, 0xFF));
+            AddColorFamily(colors, "Blues", Color.FromRgb(0x00, 0x00, 0xFF));
+            AddColorFamily(colors, "Violets", Color.FromRgb(0x80, 0x00, 0xFF));
+            AddColorFamily(colors, "Magentas", Color.FromRgb(0xFF, 0x00, 0xFF));
 
             return colors;
         }
 
-        private static void AddColorFamily(
-            List<ColorInfo> colors,
-            string category,
-            double hue,
-            double[] lightnessValues,
-            double[] chromaValues)
+        private static void AddColorFamily(List<ColorInfo> colors, string category, Color anchor)
         {
-            double[] chromaFactors = [1.00, 0.72, 0.44, 0.16];
-
-            foreach (double chromaFactor in chromaFactors)
-            {
-                for (int column = 0; column < lightnessValues.Length; column++)
-                {
-                    colors.Add(new ColorInfo(category, ColorFromOklch(
-                        lightnessValues[column],
-                        chromaValues[column] * chromaFactor,
-                        hue)));
-                }
-            }
+            colors.Add(new ColorInfo(category, anchor));
+            colors.Add(new ColorInfo(category, Blend(anchor, Colors.Black, 0.45)));
+            colors.Add(new ColorInfo(category, Blend(anchor, Colors.White, 0.25)));
+            colors.Add(new ColorInfo(category, Blend(anchor, Colors.White, 0.55)));
+            colors.Add(new ColorInfo(category, Blend(anchor, Colors.White, 0.78)));
         }
 
-        private static Color ColorFromOklch(double lightness, double chroma, double hue)
+        private static Color Blend(Color color, Color target, double amount)
         {
-            double hueRadians = hue * Math.PI / 180;
-            double low = 0;
-            double high = chroma;
-            (double R, double G, double B) linearRgb = OklabToLinearSrgb(
-                lightness,
-                chroma * Math.Cos(hueRadians),
-                chroma * Math.Sin(hueRadians));
-
-            // Preserve lightness and hue, reducing only chroma until the color fits sRGB.
-            if (!IsInSrgbGamut(linearRgb))
-            {
-                for (int iteration = 0; iteration < 16; iteration++)
-                {
-                    double candidate = (low + high) / 2;
-                    (double R, double G, double B) candidateRgb = OklabToLinearSrgb(
-                        lightness,
-                        candidate * Math.Cos(hueRadians),
-                        candidate * Math.Sin(hueRadians));
-
-                    if (IsInSrgbGamut(candidateRgb))
-                    {
-                        low = candidate;
-                        linearRgb = candidateRgb;
-                    }
-                    else
-                    {
-                        high = candidate;
-                    }
-                }
-            }
-
             return Color.FromRgb(
-                ToSrgbByte(linearRgb.R),
-                ToSrgbByte(linearRgb.G),
-                ToSrgbByte(linearRgb.B));
-        }
-
-        private static (double R, double G, double B) OklabToLinearSrgb(double lightness, double a, double b)
-        {
-            double l = Math.Pow(lightness + 0.3963377774 * a + 0.2158037573 * b, 3);
-            double m = Math.Pow(lightness - 0.1055613458 * a - 0.0638541728 * b, 3);
-            double s = Math.Pow(lightness - 0.0894841775 * a - 1.2914855480 * b, 3);
-
-            return (
-                4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-                -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-                -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s);
-        }
-
-        private static bool IsInSrgbGamut((double R, double G, double B) color)
-        {
-            return color.R >= 0 && color.R <= 1
-                && color.G >= 0 && color.G <= 1
-                && color.B >= 0 && color.B <= 1;
-        }
-
-        private static byte ToSrgbByte(double linearComponent)
-        {
-            double component = Math.Clamp(linearComponent, 0, 1);
-            double srgb = component <= 0.0031308
-                ? 12.92 * component
-                : 1.055 * Math.Pow(component, 1 / 2.4) - 0.055;
-
-            return (byte)Math.Round(srgb * 255);
+                (byte)(color.R + (target.R - color.R) * amount),
+                (byte)(color.G + (target.G - color.G) * amount),
+                (byte)(color.B + (target.B - color.B) * amount));
         }
 
         /// <summary>
@@ -169,7 +83,8 @@ namespace TimeLiner.Views
                 ListBoxGreens,
                 ListBoxCyans,
                 ListBoxBlues,
-                ListBoxViolets
+                ListBoxViolets,
+                ListBoxMagentas
             ];
 
             foreach (ListBox listBox in _colorListBoxes)
