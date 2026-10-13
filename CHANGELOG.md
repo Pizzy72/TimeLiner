@@ -4,6 +4,17 @@ All notable changes to TimeLiner are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.15.5] - 2026-10-13
+
+### Changed
+
+- Redesigned the color picker with a compact 48-color palette including fully saturated colors.
+- Updated the default time span and time event colors to match the new palette.
+
+### Fixed
+
+- Fixed deleted timeline items reappearing after saving a shorter file over an existing file.
+
 ## [2.15.4] - 2026-09-09
 
 ### Changed
