@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Remove="Properties\Settings.Designer.cs" />
     <Resource Include="Images\**\*" />
+    <EmbeddedResource Include="..\..\CHANGELOG.md" LogicalName="TimeLiner.CHANGELOG.md" />
     <None Remove="Help\TimeLinerHelp.pdf" />
     <Content Include="Help\TimeLinerHelp.pdf" CopyToOutputDirectory="Always" />
     <None Include="..\..\LICENSE" Link="LICENSE" CopyToPublishDirectory="Always" />

@@ -33,6 +33,7 @@ AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 LicenseFile=..\artifacts\installer\DOTNET-LICENSE.txt
+InfoBeforeFile=..\artifacts\installer\CHANGELOG.txt
 DefaultDirName={autopf}\{#MyAppName}
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
@@ -47,6 +48,8 @@ WizardStyle=modern
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Messages]
+WizardInfoBefore=What's new?
+InfoBeforeLabel=TimeLiner version history, with the newest version first.
 WizardLicense=Microsoft .NET License Terms
 LicenseLabel=The license terms below apply only to the bundled Microsoft .NET components.
 LicenseLabel3=The license terms below apply only to the bundled Microsoft .NET components. You must accept them before continuing with the installation.
@@ -74,3 +77,10 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+
+[Code]
+procedure InitializeWizard;
+begin
+  WizardForm.InfoBeforeMemo.Font.Name := 'Consolas';
+  WizardForm.InfoBeforeMemo.Font.Size := 10;
+end;

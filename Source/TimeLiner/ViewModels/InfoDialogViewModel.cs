@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2021–2025 Christian Pistor
 
 using System.ComponentModel;
@@ -34,6 +34,8 @@ namespace TimeLiner.ViewModels
         /// Is true if the info dialog is visible.
         /// </summary>
         private bool _isVisible = false;
+        private readonly ChangelogDialogViewModel _changelog;
+        public ICommand ChangelogCommand { get; }
 
         /// <summary>
         /// The product name.
@@ -56,6 +58,8 @@ namespace TimeLiner.ViewModels
         public InfoDialogViewModel(IDialogService dialogService, TimeLinesViewModel timeLinesViewModel)
         {
             _dialogService = dialogService;
+            _changelog = new ChangelogDialogViewModel(dialogService);
+            ChangelogCommand = new MyActionCommand(_ => _changelog.ShowDialog(this));
             _timeLinesViewModel = timeLinesViewModel;
             _versionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetCallingAssembly().Location);
         }

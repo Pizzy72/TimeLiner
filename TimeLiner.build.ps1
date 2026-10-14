@@ -63,6 +63,7 @@ This installation includes Microsoft .NET runtime components. The license terms 
         $InstallerLicensePath,
         $InstallerLicenseIntroduction + $RuntimeLicenseText,
         [System.Text.UTF8Encoding]::new($true))
+    exec { pwsh -NoProfile -File "Setup\Write-InstallerChangelog.ps1" }
     exec { dotnet iscc "Setup\TimeLiner.iss" }
 }
 

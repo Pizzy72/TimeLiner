@@ -105,6 +105,11 @@ display in Inno Setup, packaging automatically creates a UTF-8 BOM copy of the
 unchanged runtime license under `artifacts/installer/`; this generated copy is
 used only for the installer license page.
 
+The installer also displays the complete version history before destination selection.
+Packaging generates UTF-8 release notes from CHANGELOG.md using the same plain-text
+formatter as the application. The generated artifacts/installer/CHANGELOG.txt file
+contains all release sections, newest first, and is displayed in Consolas.
+
 The exact behavior is defined in `TimeLiner.build.ps1`.
 
 ---
