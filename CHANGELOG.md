@@ -4,6 +4,12 @@ All notable changes to TimeLiner are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.15.6] - 2026-10-14
+
+### Added
+
+- Added access to the complete version history through the Info dialog and the installer.
+
 ## [2.15.5] - 2026-10-13
 
 ### Changed

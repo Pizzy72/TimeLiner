@@ -65,6 +65,7 @@ namespace TimeLiner.UI
             {
                 FindDialogViewModel => new FindDialog(),
                 InfoDialogViewModel => new InfoDialog(),
+                ChangelogDialogViewModel => new ChangelogDialog(),
                 TimeLineDialogViewModel => new TimeLineDialog(),
                 TimeLineItemDialogViewModel => new TimeLineItemDialog(),
                 _ => throw new ArgumentException("No dialog is registered for this view model.", nameof(viewModel))
