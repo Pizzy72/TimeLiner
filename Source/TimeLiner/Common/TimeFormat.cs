@@ -80,16 +80,64 @@ namespace TimeLiner.Common
 
         public static string GetTimeString(DateTime utcTime, ITimeZoneInfoProvider timeZoneInfoProvider)
         {
-            TimeZoneInfo timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timeZoneInfoProvider.TimeZone);
-            TimeSpan utcOffset = timeZoneInfo.GetUtcOffset(utcTime);
-
-            if (timeZoneInfoProvider.IsUniversalTime || timeZoneInfoProvider.TimeZone == "UTC")
+            if (timeZoneInfoProvider.IsUniversalTime)
             {
                 return $"{utcTime:yyyy-MM-dd HH:mm:ss.fff} Z";
             }
 
-            DateTime zonedTime = TimeZoneInfo.ConvertTime(utcTime, timeZoneInfo);
-            return $"{zonedTime:yyyy-MM-dd HH:mm:ss.fff} {(utcOffset.Ticks > 0 ? '+' : '-')}{utcOffset:hh\\:mm}";
+            DateTimeOffset instant = new(utcTime.ToUniversalTime());
+            if (timeZoneInfoProvider.DisplayMode == TimeDisplayMode.FixedOffset)
+            {
+                long displayedTicks = instant.UtcTicks + timeZoneInfoProvider.UtcOffset.Ticks;
+                if (displayedTicks < DateTime.MinValue.Ticks || displayedTicks > DateTime.MaxValue.Ticks)
+                    return "Outside supported date range";
+            }
+            DateTimeOffset displayedTime = timeZoneInfoProvider.DisplayMode == TimeDisplayMode.FixedOffset
+                ? instant.ToOffset(timeZoneInfoProvider.UtcOffset)
+                : TimeZoneInfo.ConvertTime(instant, TimeZoneInfo.FindSystemTimeZoneById(timeZoneInfoProvider.TimeZone));
+
+            return $"{displayedTime:yyyy-MM-dd HH:mm:ss.fff} {UtcOffset.Format(displayedTime.Offset)}";
+        }
+
+        /// <summary>
+        /// Explicit offsets always win. Offset-free editor input uses the selected
+        /// display context, never the operating system's implicit local zone.
+        /// </summary>
+        public static bool TryParseUtcTime(string text, ITimeZoneInfoProvider provider, out DateTime utcTime)
+        {
+            utcTime = default;
+            if (UtcOffset.HasExplicitOffset(text))
+            {
+                if (!DateTimeOffset.TryParse(text, out DateTimeOffset explicitTime))
+                    return false;
+                utcTime = explicitTime.UtcDateTime;
+                return true;
+            }
+
+            if (!DateTime.TryParse(text, out DateTime parsed))
+                return false;
+
+            DateTime wallTime = DateTime.SpecifyKind(parsed, DateTimeKind.Unspecified);
+            try
+            {
+                if (provider.DisplayMode == TimeDisplayMode.FixedOffset)
+                {
+                    utcTime = new DateTimeOffset(wallTime, provider.UtcOffset).UtcDateTime;
+                }
+                else
+                {
+                    TimeZoneInfo zone = TimeZoneInfo.FindSystemTimeZoneById(provider.TimeZone);
+                    // The repeated hour needs an explicit offset to be unambiguous.
+                    if (zone.IsInvalidTime(wallTime) || zone.IsAmbiguousTime(wallTime))
+                        return false;
+                    utcTime = TimeZoneInfo.ConvertTimeToUtc(wallTime, zone);
+                }
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
         }
 
         private static string GetWeeksAndDaysString(TimeSpan duration)

@@ -4,6 +4,24 @@ All notable changes to TimeLiner are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+
+- Added regional and fixed UTC offset display modes, with an editable offset and
+  an option to use the original start offset of the first event in file order.
+- Added `-offset ±HH:mm` and `-offset auto` command-line options.
+
+### Changed
+
+- Show region names in the selected time zone instead of only their base UTC offset.
+- The `T` shortcut now switches between regional time and the selected fixed offset.
+
+### Fixed
+
+- Keep a typed UTC offset visible after committing it, including when a preset or
+  First event was previously selected.
+
 ## [2.15.6] - 2026-10-14
 
 ### Added

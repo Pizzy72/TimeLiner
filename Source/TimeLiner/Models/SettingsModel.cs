@@ -4,6 +4,7 @@
 using System;
 using System.Text.Json.Serialization;
 using TimeLiner.Themes;
+using TimeLiner.Common;
 
 namespace TimeLiner.Models
 {
@@ -17,6 +18,13 @@ namespace TimeLiner.Models
         /// in Coordinated Universal Time (UTC).
         /// </summary>
         public bool IsUniversalTime { get; set; } = true;
+
+        // Null preserves the UTC/regional choice made in older settings files.
+        public TimeDisplayMode? DisplayMode { get; set; }
+
+        public int FixedUtcOffsetMinutes { get; set; }
+
+        public bool UseFirstEventOffset { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether a compact time grid is used.
@@ -41,7 +49,6 @@ namespace TimeLiner.Models
         /// <summary>
         /// Gets or sets the time zone identifier used for local time display.
         /// </summary>
-        /// <remarks>
         public string TimeZone { get; set; } =
             TimeZoneInfo.FindSystemTimeZoneById(TimeZoneInfo.Local.Id).Id;
 

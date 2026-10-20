@@ -34,21 +34,7 @@ Copyright (c) 2021-2026 Christian Pistor
     <f:RibbonWindow.Resources>
 
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-        <c:TimeZoneInfoConverter x:Key="TimeZoneInfoConverter" />
         <c:DarkThemeConverter x:Key="DarkThemeConverter" />
-
-        <!--  Time Zones  -->
-        <!--  https://stackoverflow.com/questions/4672867/can-i-use-a-different-template-for-the-selected-item-in-a-wpf-combobox-than-for/4672995  -->
-        <DataTemplate x:Key="SimpleTemplate">
-            <StackPanel>
-                <TextBlock Text="{Binding Path=DisplayName, Converter={StaticResource TimeZoneInfoConverter}}" />
-            </StackPanel>
-        </DataTemplate>
-        <DataTemplate x:Key="ExtendedTemplate">
-            <StackPanel>
-                <TextBlock Text="{Binding Path=DisplayName}" />
-            </StackPanel>
-        </DataTemplate>
 
         <Style x:Key="ToolButtonStyle">
             <Setter Property="Control.Width" Value="55" />
@@ -141,23 +127,7 @@ Copyright (c) 2021-2026 Christian Pistor
                 </f:RibbonGroupBox>
 
                 <f:RibbonGroupBox Header="Time">
-                    <f:ComboBox
-                        Focusable="False"
-                        Header="Time Zone"
-                        f:InputControlProperties.InputWidth="120"
-                        IsEditable="False"
-                        ItemTemplateSelector="{v:ComboBoxTemplateSelector SelectedItemTemplate={StaticResource SimpleTemplate},
-                                                                          DropdownItemsTemplate={StaticResource ExtendedTemplate}}"
-                        ItemsSource="{Binding Source={StaticResource Locator}, Path=Settings.TimeZones}"
-                        SelectedValue="{Binding Source={StaticResource Locator}, Path=Settings.TimeZone}"
-                        SelectedValuePath="Id" 
-                        />
-                    <f:CheckBox
-                        Margin="5,10,5,0"
-                        Header="UTC Time"
-                        IsChecked="{Binding Mode=TwoWay, Source={StaticResource Locator}, Path=Settings.IsUniversalTime}"
-                        ToolTip="Show UTC time (T)" 
-                        />
+                    <v:TimeDisplayView DataContext="{Binding Source={StaticResource Locator}, Path=Settings}" />
                 </f:RibbonGroupBox>
 
                 <f:RibbonGroupBox Header="View">

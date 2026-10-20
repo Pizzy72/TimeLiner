@@ -17,6 +17,7 @@ using System.Windows.Threading;
 using TimeLiner.UI;
 using TimeLiner.UI.MessageBox;
 using TimeLiner.ViewModels;
+using TimeLiner.Common;
 
 
 namespace TimeLiner.Views
@@ -254,7 +255,7 @@ namespace TimeLiner.Views
         /// <summary>
         /// Load view model from given file.
         /// </summary>
-        private async Task LoadAsync(string filePath)
+        private async Task<bool> LoadAsync(string filePath)
         {
             try
             {
@@ -265,10 +266,12 @@ namespace TimeLiner.Views
                 TimeLinesViewModel.Loaded += TimeLinesViewModel_Loaded;
 
                 await TimeLinesViewModel.LoadAsync(filePath, TimeLinesView.TimeLines.ActualWidth);
+                return true;
             }
             catch (Exception ex)
             {
                 ShowError(ex);
+                return false;
             }
             finally
             {
@@ -577,20 +580,31 @@ namespace TimeLiner.Views
                     WindowState = WindowState.Maximized;
                 }
 
-                if (TryGetTimeZoneIdFromArgs(args, out string timeZoneId))
+                TimeDisplayOptions display = TimeDisplayOptions.Parse(args);
+                if (display.TimeZoneId != null)
                 {
-                    _settingsViewModel.TimeZone = timeZoneId;
-                    _settingsViewModel.IsUniversalTime = timeZoneId.ToLower() == "utc";
+                    _settingsViewModel.TimeZone = display.TimeZoneId;
+                    _settingsViewModel.IsUniversalTime = string.Equals(display.TimeZoneId, "UTC", StringComparison.OrdinalIgnoreCase);
+                }
+                else if (display.Offset.HasValue || display.AutoOffset)
+                {
+                    _settingsViewModel.SelectFixedOffset(display.Offset ?? _settingsViewModel.UtcOffset, display.AutoOffset);
                 }
 
                 if (TryGetFilePathFromArgs(args, out string filepath))
                 {
-                    await LoadAsync(filepath);
+                    if (!await LoadAsync(filepath))
+                        return;
                 }
                 else
                 {
                     CreateNewViewModel();
+                    if (display.AutoOffset)
+                        throw new ArgumentException("-offset auto requires a file with an explicit offset on its first event.");
                 }
+
+                if (display.AutoOffset && !_settingsViewModel.FirstEventOffset.HasValue)
+                    throw new ArgumentException("The first event has no explicit UTC offset (or the file contains no events). Select a fixed offset manually.");
             }
             catch (Exception ex)
             {
@@ -632,49 +646,6 @@ namespace TimeLiner.Views
             return true;
         }
 
-
-
-        /// <summary>
-        /// Gets the timezone id from command-line arguments if present after '-timezone'.
-        /// Throws if -timezone is present but no value is given. Returns false if not specified.
-        /// </summary>
-        private static bool TryGetTimeZoneIdFromArgs(string[] args, out string timeZoneId)
-        {
-            for (int i = 0; i < args.Length; i++)
-            {
-                if (string.Equals(args[i], "-timezone", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (i + 1 < args.Length)
-                    {
-                        string value = args[i + 1];
-                        if (string.Equals(value, "local", StringComparison.OrdinalIgnoreCase))
-                        {
-                            timeZoneId = TimeZoneInfo.Local.Id;
-                        }
-                        else
-                        {
-                            try
-                            {
-                                TimeZoneInfo timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(value);
-                                timeZoneId = timeZoneInfo.Id;
-                            }
-                            catch (TimeZoneNotFoundException)
-                            {
-                                throw new ArgumentException($"Invalid timezone id: '{value}'");
-                            }
-                        }
-                        return true;
-                    }
-                    else
-                    {
-                        throw new ArgumentException("Missing value for -timezone option.");
-                    }
-                }
-            }
-
-            timeZoneId = "";
-            return false;
-        }
 
 
         /// <summary>
