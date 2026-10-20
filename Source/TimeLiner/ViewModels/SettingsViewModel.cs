@@ -209,7 +209,7 @@ namespace TimeLiner.ViewModels
             || (IsFixedOffset && UsesFirstEventOffset && !_firstEventOffset.HasValue);
 
         public string TimeDisplayHint => !string.IsNullOrEmpty(_offsetError) ? _offsetError
-            : IsRegionalTime ? "Regional summer/winter time rules apply."
+            : IsRegionalTime ? "Daylight saving rules apply."
             : UsesFirstEventOffset && !_firstEventOffset.HasValue
                 ? "First event has no explicit offset. Select an offset."
                 : "Fixed offset; no daylight saving adjustment.";
