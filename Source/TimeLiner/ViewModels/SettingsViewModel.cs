@@ -212,7 +212,7 @@ namespace TimeLiner.ViewModels
             : IsRegionalTime ? "Regional summer/winter time rules apply."
             : UsesFirstEventOffset && !_firstEventOffset.HasValue
                 ? "First event has no explicit offset. Select an offset."
-                : "Same offset for all events. No daylight saving adjustment.";
+                : "Fixed offset; no daylight saving adjustment.";
 
         public bool TryCommitOffsetInput()
         {

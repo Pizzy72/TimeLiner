@@ -313,6 +313,26 @@ Copyright (c) 2021-2026 Christian Pistor
                     <RowDefinition />
                 </Grid.RowDefinitions>
 
+                <!-- Reserve timestamp width independently of the displayed UTC offset. -->
+                <TextBox
+                    Grid.Column="4"
+                    Visibility="Hidden"
+                    IsReadOnly="True"
+                    IsTabStop="False"
+                    BorderThickness="0"
+                    Style="{DynamicResource TextBoxStyle}"
+                    Text="8888-88-88 88:88:88.888 +88:88"
+                    TextWrapping="NoWrap" />
+                <TextBox
+                    Grid.Column="7"
+                    Visibility="Hidden"
+                    IsReadOnly="True"
+                    IsTabStop="False"
+                    BorderThickness="0"
+                    Style="{DynamicResource TextBoxStyle}"
+                    Text="8888-88-88 88:88:88.888 +88:88"
+                    TextWrapping="NoWrap" />
+
                 <!-- Time scale -->
                 <!-- Example: "Scale : 5 min" -->
                 <TextBlock
