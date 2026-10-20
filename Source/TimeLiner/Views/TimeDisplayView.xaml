@@ -31,7 +31,7 @@
             PreviewKeyDown="TimeSelection_PreviewKeyDown"
             ToolTip="Regional time or a fixed UTC offset. Toggle with T." />
         <f:ComboBox x:Name="TimeZoneComboBox"
-            Header="Time zone"
+            Header="Time Zone"
             f:InputControlProperties.InputWidth="200"
             IsEditable="False"
             Visibility="{Binding IsRegionalTime, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -43,7 +43,7 @@
             ToolTip="{Binding SelectedItem.DisplayName, RelativeSource={RelativeSource Self}}" />
         <Grid Visibility="{Binding IsFixedOffset, Converter={StaticResource BooleanToVisibilityConverter}}">
             <f:ComboBox x:Name="UtcOffsetComboBox"
-                Header="UTC offset"
+                Header="UTC Offset"
                 f:InputControlProperties.InputWidth="200"
                 IsEditable="True"
                 IsTextSearchEnabled="False"
@@ -54,7 +54,7 @@
                 PreviewKeyDown="UtcOffsetComboBox_PreviewKeyDown"
                 LostKeyboardFocus="UtcOffsetComboBox_LostKeyboardFocus"
                 DropDownClosed="UtcOffsetComboBox_DropDownClosed"
-                ToolTip="Enter ±HH:mm, or select First event to use its original start offset in file order. UTC is +00:00. Enter commits; Escape cancels." />
+                ToolTip="Enter ±HH:mm, or select First Event to use its original start offset in file order. UTC is +00:00. Enter commits; Escape cancels." />
             <Border BorderBrush="Red" BorderThickness="1" IsHitTestVisible="False"
                 Visibility="{Binding HasOffsetError, Converter={StaticResource BooleanToVisibilityConverter}}" />
         </Grid>

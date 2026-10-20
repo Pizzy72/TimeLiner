@@ -42,7 +42,7 @@ namespace TimeLinerTest
             settings.OffsetInput = settings.FirstEventOffsetLabel;
             settings.TryCommitOffsetInput();
             Flush(view);
-            Assert.AreEqual("First event (+02:00)", offset.Text);
+            Assert.AreEqual("First Event (+02:00)", offset.Text);
         }
 
         [STATestMethod]
@@ -88,7 +88,7 @@ namespace TimeLinerTest
                 Flush(view);
                 Assert.IsTrue(settings.UsesFirstEventOffset);
                 Assert.AreEqual(TimeSpan.FromHours(1), settings.UtcOffset);
-                Assert.AreEqual("First event (+01:00)", combo.Text);
+                Assert.AreEqual("First Event (+01:00)", combo.Text);
 
                 combo.IsDropDownOpen = true;
                 combo.SelectedItem = "UTC (+00:00)";
@@ -286,7 +286,7 @@ namespace TimeLinerTest
                 Flush(view);
                 Assert.IsTrue(settings.UsesFirstEventOffset);
                 Assert.AreEqual(TimeSpan.FromHours(1), settings.UtcOffset);
-                Assert.AreEqual("First event (+01:00)", editor.Text, "Automatic selection must update its resolved label on a new file.");
+                Assert.AreEqual("First Event (+01:00)", editor.Text, "Automatic selection must update its resolved label on a new file.");
             }
             finally { window.Close(); }
         }

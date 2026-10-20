@@ -148,7 +148,7 @@ namespace TimeLinerTest
             Assert.AreEqual(TimeSpan.FromHours(2), settings.UtcOffset);
             settings.SetFirstEventOffset(TimeSpan.FromHours(1));
             Assert.AreEqual(TimeSpan.FromHours(1), settings.UtcOffset);
-            Assert.AreEqual("First event (+01:00)", settings.OffsetInput);
+            Assert.AreEqual("First Event (+01:00)", settings.OffsetInput);
             settings.SetFirstEventOffset(null);
             Assert.IsTrue(settings.HasOffsetError);
             Assert.AreEqual(TimeSpan.FromHours(1), settings.UtcOffset, "Missing metadata must retain the previous valid display.");
@@ -253,7 +253,7 @@ namespace TimeLinerTest
 
                 await timelines.LoadAsync(secondPath, 1000);
                 Assert.AreEqual(TimeSpan.FromHours(1), settings.UtcOffset);
-                Assert.AreEqual("First event (+01:00)", settings.OffsetInput);
+                Assert.AreEqual("First Event (+01:00)", settings.OffsetInput);
                 timelines.Create(1000);
                 Assert.IsNull(settings.FirstEventOffset);
                 Assert.IsTrue(settings.HasOffsetError);

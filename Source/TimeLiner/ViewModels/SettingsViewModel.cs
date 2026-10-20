@@ -156,8 +156,8 @@ namespace TimeLiner.ViewModels
 
         public IReadOnlyList<KeyValuePair<TimeDisplayMode, string>> DisplayModes { get; } =
         [
-            new(TimeDisplayMode.Regional, "Regional time"),
-            new(TimeDisplayMode.FixedOffset, "Fixed UTC offset")
+            new(TimeDisplayMode.Regional, "Regional Time"),
+            new(TimeDisplayMode.FixedOffset, "Fixed UTC Offset")
         ];
 
         public bool IsRegionalTime => DisplayMode == TimeDisplayMode.Regional;
@@ -167,8 +167,8 @@ namespace TimeLiner.ViewModels
         public bool UsesFirstEventOffset => _settings.UseFirstEventOffset;
 
         public string FirstEventOffsetLabel => _firstEventOffset.HasValue
-            ? $"First event ({OffsetUtility.Format(_firstEventOffset.Value)})"
-            : "First event (unavailable)";
+            ? $"First Event ({OffsetUtility.Format(_firstEventOffset.Value)})"
+            : "First Event (unavailable)";
 
         // Replacing ItemsSource during an edit makes ComboBox restore its old
         // selection over the committed text. Only a new file context changes it.
