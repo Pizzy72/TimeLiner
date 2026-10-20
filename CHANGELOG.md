@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- Keep the T shortcut available when the closed Display or Time zone selection
+  has keyboard focus, while preserving list navigation and offset text entry.
 - Keep a typed UTC offset visible after committing it, including when a preset or
   First event was previously selected.
 

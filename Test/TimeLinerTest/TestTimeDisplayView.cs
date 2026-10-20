@@ -102,9 +102,79 @@ namespace TimeLinerTest
             finally { window.Close(); }
         }
 
-        private static void Press(Fluent.ComboBox combo, Key key) => combo.RaiseEvent(
-            new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(combo), 0, key)
-            { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+        private static KeyEventArgs Press(Fluent.ComboBox combo, Key key)
+        {
+            KeyEventArgs args = new(Keyboard.PrimaryDevice, PresentationSource.FromVisual(combo), 0, key)
+            { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+            combo.RaiseEvent(args);
+            return args;
+        }
+
+        [STATestMethod]
+        [DataRow("DisplayModeComboBox")]
+        [DataRow("TimeZoneComboBox")]
+        public void T_AfterFocusingClosedSelection_TogglesTimeDisplay(string name)
+        {
+            var settings = new SettingsViewModel(new SettingsRepositoryStub(new SettingsModel()));
+            settings.SelectFixedOffset(TimeSpan.FromHours(8));
+            settings.DisplayMode = TimeDisplayMode.Regional;
+            var view = CreateView(settings);
+            var combo = (Fluent.ComboBox)view.FindName(name);
+            Window window = new()
+            {
+                Content = view, Width = 430, Height = 170,
+                ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+            };
+            try
+            {
+                window.Show();
+                Flush(view);
+                Keyboard.Focus(combo);
+                Assert.IsTrue(combo.IsKeyboardFocusWithin);
+                Assert.IsTrue(Press(combo, Key.T).Handled);
+                Flush(view);
+                Assert.AreEqual(TimeDisplayMode.FixedOffset, settings.DisplayMode);
+                Assert.AreEqual(TimeSpan.FromHours(8), settings.UtcOffset);
+                Assert.IsFalse(combo.IsKeyboardFocusWithin, "After toggling, timeline shortcuts should receive focus again.");
+
+                settings.DisplayMode = TimeDisplayMode.Regional;
+                Flush(view);
+                Keyboard.Focus(combo);
+                combo.IsDropDownOpen = true;
+                Press(combo, Key.T);
+                Flush(view);
+                Assert.AreEqual(TimeDisplayMode.Regional, settings.DisplayMode,
+                    "An open list must retain native keyboard navigation.");
+            }
+            finally { window.Close(); }
+        }
+
+        [STATestMethod]
+        public void T_InEditableOffset_DoesNotToggleTimeDisplay()
+        {
+            var settings = new SettingsViewModel(new SettingsRepositoryStub(new SettingsModel()));
+            settings.SelectFixedOffset(TimeSpan.FromHours(8));
+            var view = CreateView(settings);
+            var combo = (Fluent.ComboBox)view.FindName("UtcOffsetComboBox");
+            Window window = new()
+            {
+                Content = view, Width = 430, Height = 170,
+                ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+            };
+            try
+            {
+                window.Show();
+                Flush(view);
+                var editor = (TextBox)combo.Template.FindName("PART_EditableTextBox", combo);
+                Keyboard.Focus(editor);
+                Assert.IsTrue(combo.IsKeyboardFocusWithin);
+                Assert.IsFalse(Press(combo, Key.T).Handled);
+                Assert.IsTrue(combo.IsKeyboardFocusWithin);
+                Assert.AreEqual(TimeDisplayMode.FixedOffset, settings.DisplayMode);
+                Assert.AreEqual(TimeSpan.FromHours(8), settings.UtcOffset);
+            }
+            finally { window.Close(); }
+        }
 
         [STATestMethod]
         [DataRow("+03:00", true)]

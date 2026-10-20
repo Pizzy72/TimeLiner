@@ -14,6 +14,18 @@ namespace TimeLiner.Views
 
         public TimeDisplayView() => InitializeComponent();
 
+        private void TimeSelection_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.T || Keyboard.Modifiers != ModifierKeys.None
+                || sender is not Fluent.ComboBox { IsEditable: false, IsDropDownOpen: false }
+                || DataContext is not SettingsViewModel settings)
+                return;
+
+            e.Handled = true;
+            settings.ToggleTimeFormat();
+            Focus();
+        }
+
         private bool CommitOffset()
         {
             if (_handlingOffset || DataContext is not SettingsViewModel settings)

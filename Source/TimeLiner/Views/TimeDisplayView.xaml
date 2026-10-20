@@ -28,6 +28,7 @@
             ItemsSource="{Binding DisplayModes}"
             SelectedValue="{Binding DisplayMode}"
             SelectedValuePath="Key"
+            PreviewKeyDown="TimeSelection_PreviewKeyDown"
             ToolTip="Regional time or a fixed UTC offset. Toggle with T." />
         <f:ComboBox x:Name="TimeZoneComboBox"
             Header="Time zone"
@@ -38,6 +39,7 @@
             ItemsSource="{Binding TimeZones}"
             SelectedValue="{Binding TimeZone}"
             SelectedValuePath="Id"
+            PreviewKeyDown="TimeSelection_PreviewKeyDown"
             ToolTip="{Binding SelectedItem.DisplayName, RelativeSource={RelativeSource Self}}" />
         <Grid Visibility="{Binding IsFixedOffset, Converter={StaticResource BooleanToVisibilityConverter}}">
             <f:ComboBox x:Name="UtcOffsetComboBox"
