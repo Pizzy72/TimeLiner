@@ -122,6 +122,8 @@ namespace TimeLinerTest
 
                 settings.SetFirstEventOffset(TimeSpan.FromHours(1));
                 Flush(view);
+                Keyboard.Focus(editor);
+                Assert.IsTrue(combo.IsKeyboardFocusWithin);
                 combo.IsDropDownOpen = true;
                 combo.SelectedItem = settings.FirstEventOffsetLabel;
                 combo.IsDropDownOpen = false;
@@ -129,7 +131,10 @@ namespace TimeLinerTest
                 Assert.IsTrue(settings.UsesFirstEventOffset);
                 Assert.AreEqual(TimeSpan.FromHours(1), settings.UtcOffset);
                 Assert.AreEqual("First Event (+01:00)", combo.Text);
+                Assert.IsFalse(combo.IsKeyboardFocusWithin,
+                    "Choosing First Event must leave the editor without an extra Enter key.");
 
+                Keyboard.Focus(editor);
                 combo.IsDropDownOpen = true;
                 combo.SelectedItem = "UTC (+00:00)";
                 combo.IsDropDownOpen = false;
@@ -138,6 +143,8 @@ namespace TimeLinerTest
                 Assert.IsFalse(settings.UsesFirstEventOffset);
                 Assert.IsFalse(settings.HasOffsetError);
                 Assert.AreEqual("+00:00", editor.Text);
+                Assert.IsFalse(combo.IsKeyboardFocusWithin,
+                    "Choosing a preset must leave the editor without an extra Enter key.");
             }
             finally { window.Close(); }
         }

@@ -4,6 +4,7 @@
 using System;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using TimeLiner.ViewModels;
 
 namespace TimeLiner.Views
@@ -75,6 +76,18 @@ namespace TimeLiner.Views
                 CommitOffset();
         }
 
-        private void UtcOffsetComboBox_DropDownClosed(object sender, EventArgs e) => CommitOffset();
+        private void UtcOffsetComboBox_DropDownClosed(object sender, EventArgs e)
+        {
+            if (!CommitOffset())
+                return;
+
+            // Wait until the popup has restored keyboard focus to the editor.
+            // Do not take focus away from another control the user has clicked.
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+            {
+                if (!UtcOffsetComboBox.IsDropDownOpen && UtcOffsetComboBox.IsKeyboardFocusWithin)
+                    Focus();
+            }));
+        }
     }
 }
