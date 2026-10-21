@@ -11,7 +11,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <c:TimeZoneInfoConverter x:Key="TimeZoneInfoConverter" />
         <DataTemplate x:Key="TimeSelectionHeaderTemplate">
-            <Grid>
+            <Grid VerticalAlignment="Center">
                 <!-- Reserve the longest label in both display modes. -->
                 <TextBlock Text="UTC Offset" Visibility="Hidden" />
                 <TextBlock Text="{Binding}" />
