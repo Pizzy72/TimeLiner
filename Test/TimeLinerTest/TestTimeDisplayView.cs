@@ -19,6 +19,46 @@ namespace TimeLinerTest
     public class TestTimeDisplayView
     {
         [STATestMethod]
+        public void ToggleDisplayMode_KeepsRibbonGroupWidthStable()
+        {
+            var settings = new SettingsViewModel(new SettingsRepositoryStub(new SettingsModel { IsUniversalTime = false }));
+            var view = CreateView(settings);
+            var ribbon = new Fluent.Ribbon { AutomaticStateManagement = false };
+            var tab = new Fluent.RibbonTabItem { Header = "Home" };
+            var group = new Fluent.RibbonGroupBox { Header = "Time" };
+            group.Items.Add(view);
+            tab.Groups.Add(group);
+            ribbon.Tabs.Add(tab);
+            ribbon.SelectedTabIndex = 0;
+            var window = new Window
+            {
+                Content = ribbon, Width = 550, Height = 210,
+                ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000
+            };
+            window.Resources.MergedDictionaries.Add(new ResourceDictionary
+            {
+                Source = new Uri("pack://application:,,,/Fluent;component/Themes/Generic.xaml")
+            });
+            try
+            {
+                window.Show();
+                window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+                window.UpdateLayout();
+                double regionalWidth = group.ActualWidth;
+                Assert.IsTrue(regionalWidth > 0);
+                for (int i = 0; i < 4; i++)
+                {
+                    settings.ToggleTimeFormat();
+                    window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+                    window.UpdateLayout();
+                    Assert.AreEqual(regionalWidth, group.ActualWidth, 0.1,
+                        "The Time group must not move neighbouring groups when switching display modes.");
+                }
+            }
+            finally { window.Close(); }
+        }
+
+        [STATestMethod]
         public void ModeSelection_UpdatesVisibleControls_AndExternalSettingsUpdateUi()
         {
             var settings = new SettingsViewModel(new SettingsRepositoryStub(new SettingsModel { IsUniversalTime = false }));

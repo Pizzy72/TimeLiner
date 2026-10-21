@@ -10,6 +10,13 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <c:TimeZoneInfoConverter x:Key="TimeZoneInfoConverter" />
+        <DataTemplate x:Key="TimeSelectionHeaderTemplate">
+            <Grid>
+                <!-- Reserve the longest label in both display modes. -->
+                <TextBlock Text="UTC Offset" Visibility="Hidden" />
+                <TextBlock Text="{Binding}" />
+            </Grid>
+        </DataTemplate>
         <DataTemplate x:Key="SelectedTimeZoneTemplate">
             <TextBlock Text="{Binding DisplayName, Converter={StaticResource TimeZoneInfoConverter}}"
                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
@@ -22,6 +29,7 @@
     <StackPanel>
         <f:ComboBox x:Name="DisplayModeComboBox"
             Header="Display"
+            HeaderTemplate="{StaticResource TimeSelectionHeaderTemplate}"
             f:InputControlProperties.InputWidth="200"
             IsEditable="False"
             DisplayMemberPath="Value"
@@ -32,6 +40,7 @@
             ToolTip="Regional time or a fixed UTC offset. Toggle with T." />
         <f:ComboBox x:Name="TimeZoneComboBox"
             Header="Time Zone"
+            HeaderTemplate="{StaticResource TimeSelectionHeaderTemplate}"
             f:InputControlProperties.InputWidth="200"
             IsEditable="False"
             Visibility="{Binding IsRegionalTime, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -44,6 +53,7 @@
         <Grid Visibility="{Binding IsFixedOffset, Converter={StaticResource BooleanToVisibilityConverter}}">
             <f:ComboBox x:Name="UtcOffsetComboBox"
                 Header="UTC Offset"
+                HeaderTemplate="{StaticResource TimeSelectionHeaderTemplate}"
                 f:InputControlProperties.InputWidth="200"
                 IsEditable="True"
                 IsTextSearchEnabled="False"
