@@ -39,7 +39,7 @@ namespace TimeLinerTest
         public void LoadsBundledChangelog()
         {
             string text = ChangelogText.Load();
-            Assert.IsTrue(text.StartsWith("Unreleased" + Environment.NewLine));
+            Assert.IsTrue(text.StartsWith("2.16.0 - 2026-10-24" + Environment.NewLine));
             StringAssert.Contains(text, "2.15.6 - 2026-10-14");
             Assert.IsFalse(text.Contains("All notable changes"));
             StringAssert.Contains(text, "Changed" + Environment.NewLine + Environment.NewLine + "- ");
