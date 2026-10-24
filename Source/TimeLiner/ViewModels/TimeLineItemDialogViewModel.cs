@@ -383,12 +383,18 @@ namespace TimeLiner.ViewModels
                     return;
                 }
 
+                if (!TryParseUtcTime(_startTimeText, out DateTime startTime))
+                    return;
+                DateTime endTime = startTime;
+                if (IsTimeSpan && !TryParseUtcTime(_endTimeText, out endTime))
+                    return;
+
                 await _timeLinesViewModel.CaptureUndoAsync();
 
                 _timeLineItem.TimeLineViewModel.Name = _timeLineName.Trim();
                 _timeLineItem.Name = _timeLineItemName.Trim();
-                _timeLineItem.StartTime = DateTime.Parse(_startTimeText).ToUniversalTime();
-                _timeLineItem.EndTime = IsTimeSpan ? DateTime.Parse(_endTimeText).ToUniversalTime() : _timeLineItem.StartTime;
+                _timeLineItem.StartTime = startTime;
+                _timeLineItem.EndTime = endTime;
                 _timeLineItem.Color = _color;
             }
 
@@ -398,17 +404,7 @@ namespace TimeLiner.ViewModels
         /// <summary>
         /// Try to parse the time from the given string, and convert it to UTC.
         /// </summary>
-        private static bool TryParseUtcTime(string s, out DateTime timeUtc)
-        {
-            timeUtc = default;
-
-            if (DateTime.TryParse(s, out DateTime time))
-            {
-                timeUtc = time.ToUniversalTime();
-                return true;
-            }
-
-            return false;
-        }
+        private bool TryParseUtcTime(string s, out DateTime timeUtc) =>
+            TimeFormat.TryParseUtcTime(s, _settingsViewModel, out timeUtc);
     }
 }

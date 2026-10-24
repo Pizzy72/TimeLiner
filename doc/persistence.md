@@ -96,8 +96,22 @@ error detection.
 
 CSV timestamps preserve an instant in time, including its UTC offset where present.
 An offset alone cannot identify the original time zone because multiple time zones can
-share an offset and daylight-saving rules change over time. Time zone selection is
-therefore treated as a display setting rather than inferred from imported timestamps.
+share an offset and daylight-saving rules change over time. Regional time zone
+selection is therefore a display setting, never inferred from imported timestamps.
+
+Alternatively, all events can be displayed with a fixed UTC offset, without
+daylight-saving adjustment. The offset can be supplied manually or using
+`-offset ±HH:mm`. Choosing **First event** in the Ribbon, or `-offset auto`, uses
+the original explicit start offset of the first event in file order. An empty
+timeline does not count as an event. A missing start offset is not taken from the
+machine's local zone or from a later event. Other events may have different
+original offsets; the display still uses one common offset.
+
+The original first-event offset is retained as in-memory import context, including
+undo snapshots. It is refreshed on file load, not on editing or reordering events.
+The chosen mode, manual/last resolved offset, and automatic-source preference are
+stored in application settings. Existing settings preserve their UTC/regional
+choice. No additional CSV metadata is written.
 
 ---
 
@@ -123,6 +137,8 @@ When exporting data:
 - empty timelines are preserved explicitly
 
 The export format is compatible with common spreadsheet tools.
+Because export writes UTC, the first-event offset on reopening an exported file
+is zero. The original input offsets and the display zone are not persisted in CSV.
 
 ---
 

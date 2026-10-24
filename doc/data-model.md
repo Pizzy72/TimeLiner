@@ -92,6 +92,9 @@ Consequences:
 - explicit conversion required when displaying local time
 
 The decision to normalize times to UTC is enforced during CSV import.
+The original explicit start offset of the first event in file order is retained
+separately as import context for the optional **First event** display setting.
+It does not participate in event ordering, position, or duration calculations.
 
 ---
 

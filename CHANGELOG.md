@@ -4,6 +4,18 @@ All notable changes to TimeLiner are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.16.0] - 2026-10-24
+
+### Added
+
+- Added Regional Time and Fixed UTC Offset display modes, with custom offsets
+  and an option to use the first event's original offset.
+- Added `-offset ±HH:mm` and `-offset auto` command-line options.
+
+### Changed
+
+- Updated the online help with a comparison of regional time and fixed UTC offsets.
+
 ## [2.15.6] - 2026-10-14
 
 ### Added

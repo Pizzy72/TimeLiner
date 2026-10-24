@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Windows;
 using TimeLiner.Models;
 using TimeLiner.Themes;
+using TimeLiner.Common;
 
 namespace TimeLinerTest
 {
@@ -54,6 +55,9 @@ namespace TimeLinerTest
                 IsTimeLocatorLocked = true,
                 IsNameVisible = false,
                 TimeZone = "UTC+2",
+                DisplayMode = TimeDisplayMode.FixedOffset,
+                FixedUtcOffsetMinutes = -345,
+                UseFirstEventOffset = true,
                 Theme = AppTheme.Dark
             };
 
@@ -68,6 +72,9 @@ namespace TimeLinerTest
             Assert.AreEqual(settingsOriginal.IsNameVisible, settingsLoaded.IsNameVisible);
             Assert.AreEqual(settingsOriginal.TimeZone, settingsLoaded.TimeZone);
             Assert.AreEqual(settingsOriginal.Theme, settingsLoaded.Theme);
+            Assert.AreEqual(settingsOriginal.DisplayMode, settingsLoaded.DisplayMode);
+            Assert.AreEqual(settingsOriginal.FixedUtcOffsetMinutes, settingsLoaded.FixedUtcOffsetMinutes);
+            Assert.AreEqual(settingsOriginal.UseFirstEventOffset, settingsLoaded.UseFirstEventOffset);
         }
 
         [TestMethod]

@@ -17,9 +17,15 @@ namespace TimeLiner.Common
         string TimeZone { get; }
 
         /// <summary>
-        /// If true, display UTC time; otherwise, display local time in selected time zone.
+        /// If true, the selected fixed offset is zero (UTC).
         /// </summary>
         bool IsUniversalTime { get; }
+
+        /// <summary>The selected regional or fixed-offset display mode.</summary>
+        TimeDisplayMode DisplayMode { get; }
+
+        /// <summary>The selected fixed offset, including a resolved first-event offset.</summary>
+        TimeSpan UtcOffset { get; }
 
         /// <summary>
         /// The list of available system time zones.

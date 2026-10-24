@@ -64,6 +64,12 @@ namespace TimeLiner.Models
         public string FilePath { get; private set; }
 
         /// <summary>
+        /// Original start offset of the first event in file order, if explicit.
+        /// This is import context, not inferred from the normalized UTC times.
+        /// </summary>
+        public TimeSpan? FirstEventOffset { get; private set; }
+
+        /// <summary>
         /// The timeline models.
         /// </summary>
         public IReadOnlyList<TimeLineModel> TimeLines => _timeLines.AsReadOnly();
@@ -87,6 +93,7 @@ namespace TimeLiner.Models
             TimeLinesModel clone = await LoadAsync(stream);
 
             clone.FilePath = FilePath;
+            clone.FirstEventOffset = FirstEventOffset;
 
             return clone;
         }
@@ -194,6 +201,7 @@ namespace TimeLiner.Models
 
             string line;
             long lineNumber = 0;
+            bool firstEventRead = false;
 
             try
             {
@@ -256,6 +264,12 @@ namespace TimeLiner.Models
                         throw new TimeLinerException(Resources.ErrorMissingStartTime);
 
                     DateTime startTime = DateTime.Parse(startTimeStr).ToUniversalTime();
+
+                    if (!firstEventRead)
+                    {
+                        model.FirstEventOffset = UtcOffset.ReadExplicitOffset(startTimeStr);
+                        firstEventRead = true;
+                    }
 
                     DateTime endTime;
 

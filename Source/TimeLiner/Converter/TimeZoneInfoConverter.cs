@@ -16,10 +16,10 @@ namespace TimeLiner.Converter
         {
             if (value is string displayName)
             {
-                // Cut off text after UTC offset:
-                // "(UTC-12:00) International Date Line West" --> "(UTC-12:00)"
-                int pos = displayName.IndexOf(')') + 1;
-                return displayName.Substring(0, pos);
+                // Keep the region visible. The base offset alone misleadingly
+                // suggests a fixed offset, although daylight-saving rules apply.
+                int pos = displayName.IndexOf(')');
+                return pos >= 0 ? displayName[(pos + 1)..].Trim() : displayName;
             }
             return value;
         }

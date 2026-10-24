@@ -953,9 +953,10 @@ namespace TimeLiner.ViewModels
             _timeLinesVisibleWidth = timeLinesVisibleWidth;
 
             TimeLinesModel = new TimeLinesModel();
+            _settingsViewModel.SetFirstEventOffset(null);
             IsModified = false;
 
-            TotalStartTime = DateTime.Now;
+            TotalStartTime = DateTime.UtcNow;
             TotalEndTime = TotalStartTime + TimeSpan.FromMinutes(10);
 
             Scale = GetFittingScale(TotalStartTime, TotalEndTime, _timeLinesVisibleWidth);
@@ -997,6 +998,7 @@ namespace TimeLiner.ViewModels
                 IsModified = false;
 
                 ApplyTimeLinesModel(loadedModel);
+                _settingsViewModel.SetFirstEventOffset(loadedModel.FirstEventOffset);
             }
             catch (Exception ex)
             {
