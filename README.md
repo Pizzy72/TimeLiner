@@ -76,59 +76,13 @@ The application is portable. User-specific settings are stored separately under:
 %APPDATA%\TimeLiner\
 ```
 
-### Time Display
-
-The **Time** Ribbon group offers two display modes:
-
-- **Regional time** uses the selected Windows time zone and the summer/winter
-  time rules applicable to each event's date. The selected entry shows the region.
-- **Fixed UTC offset** uses one offset for every event, without daylight-saving
-  adjustment. Type `+HH:mm` or `-HH:mm` (from `-14:00` to `+14:00`), or choose
-  a preset. UTC is `+00:00`. Enter commits a valid edit and leaves the input field;
-  leaving the field also commits an edit. Escape
-  cancels it. Invalid input leaves the previous valid display unchanged.
-
-The preset list starts with **First event** and **UTC (+00:00)**, followed by
-whole-hour offsets from `-12:00` to `+14:00` in ascending order, with `+05:30` and
-`+05:45` included. Other offsets remain freely editable.
-
-The offset list also includes **First event**, showing the resolved offset. This
-uses the explicit offset of the start timestamp of the first event in **file order**,
-not the chronologically earliest event. It is recalculated when another file is
-loaded, not when events are edited or reordered. Mixed offsets elsewhere in the
-file do not change this one common display offset. If that first timestamp has no
-explicit offset, or the file has no events, select an offset manually.
-
-The `T` shortcut switches between regional time and the selected fixed offset.
-Times entered in the event editor without an explicit offset use the selected
-display context. In regional mode, ambiguous or nonexistent clock times around
-a daylight-saving transition require correction or an explicit offset.
-
-You can also select the display at startup:
-
-```powershell
-TimeLiner.exe data.csv -timezone "W. Europe Standard Time"
-TimeLiner.exe data.csv -timezone local
-TimeLiner.exe data.csv -timezone UTC
-TimeLiner.exe data.csv -offset +02:00
-TimeLiner.exe data.csv -offset -05:30
-TimeLiner.exe data.csv -offset auto
-```
-
-Specify only one of `-timezone` and `-offset`. `-offset auto` requires a file with
-an explicit offset (`Z` counts as zero) on its first event. Without either option,
-the saved display setting is used. A command-line choice is reflected in the
-Ribbon and can subsequently be changed there.
-
-All modes preserve the same instants, event positions, and elapsed durations.
-Saving still writes timestamps in UTC; therefore, **First event** on a saved file
-resolves to `+00:00`. Display settings are stored in user settings, not in CSV files.
-
 ### Documentation
 
 Developer-oriented documentation is located in the `doc` folder.
 
 Start with [TimeLiner – Overview](doc/overview.md)
+
+For usage instructions, see the [TimeLiner Help](Source/TimeLiner/Help/TimeLinerHelp.pdf).
 
 ---
 
